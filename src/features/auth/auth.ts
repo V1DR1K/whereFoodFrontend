@@ -1,0 +1,1 @@
+import { api,session } from '../../lib/api'; import type { Session } from '../../types/domain'; export const login=(username:string,password:string)=>api<Session>('/auth/login',{method:'POST',body:JSON.stringify({username,password})}).then(value=>{session.set(value);return value}); export const logout=()=>session.clear();
