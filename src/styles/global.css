@@ -594,9 +594,10 @@ header {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
   border: 1px solid var(--line);
   border-radius: 18px;
+  background: #090909;
 }
 .place-cover-empty {
   display: grid;
@@ -627,6 +628,11 @@ header {
   line-height: 0;
 }
 .item-photo-button img {
+  width: 100%;
+  height: auto;
+  max-height: 560px;
+  object-fit: contain;
+  background: #090909;
   transition: transform 0.2s ease;
 }
 .item-photo-button:hover img,
