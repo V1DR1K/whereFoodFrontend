@@ -76,12 +76,12 @@ export function PlaceForm({
           categoryId: Number(form.get("categoryId")),
           tagIds,
         });
-        if (file) await uploadPlacePhoto(saved.id, file);
-        return saved;
+        return file ? uploadPlacePhoto(saved.id, file) : saved;
       }
+      let saved = place;
       if (canEditDetails) {
         const address = String(form.get("address")).trim();
-        await savePlace(
+        saved = await savePlace(
           {
             name: String(form.get("name")),
             address: address || undefined,
@@ -92,13 +92,13 @@ export function PlaceForm({
           },
           place.id,
         );
-        if (file) await uploadPlacePhoto(place.id, file);
+        if (file) saved = await uploadPlacePhoto(place.id, file);
       }
       await savePlaceReview(place.id, {
         comment: String(form.get("reviewComment")) || undefined,
         ...scores,
       } as PlaceReviewInput);
-      return place;
+      return saved;
     },
     onSuccess: async () => {
       await Promise.all([
@@ -108,9 +108,6 @@ export function PlaceForm({
       onClose();
     },
   });
-  const photo = file
-    ? URL.createObjectURL(file)
-    : (place?.thumbnailUrl ?? place?.photoUrl);
   return (
     <Modal onClose={onClose}>
       <form
@@ -179,6 +176,11 @@ export function PlaceForm({
                 onChange={(e) => setFile(e.target.files?.[0])}
               />
             </label>
+            {place?.photoUrl && !file && (
+              <small className="tiny">
+                La foto actual se conservará si no elegís otra.
+              </small>
+            )}
             <fieldset className="tag-picker">
               <legend>¿Por qué se destaca?</legend>
               <p>Elegí todas las etiquetas que correspondan.</p>
@@ -192,13 +194,6 @@ export function PlaceForm({
               </div>
               {addTag.error && <p className="form-error">No pudimos añadir la etiqueta. Probá con otro nombre.</p>}
             </fieldset>
-            {photo && (
-              <img
-                className="form-photo-preview"
-                src={photo}
-                alt="Vista previa del lugar"
-              />
-            )}
           </>
         )}
         {place && (
