@@ -46,6 +46,9 @@ export function PlaceForm({
     ambiance: ownReview?.ambiance ?? 4,
   });
   const [file, setFile] = useState<File>();
+  const [categoryId, setCategoryId] = useState(() =>
+    place?.category.id ? String(place.category.id) : "",
+  );
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
@@ -145,7 +148,8 @@ export function PlaceForm({
               Tipo
               <select
                 name="categoryId"
-                defaultValue={place?.category.id}
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
                 required
               >
                 <option value="">Elegí una categoría</option>
