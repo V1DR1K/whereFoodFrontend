@@ -1012,5 +1012,5 @@ a {
 .film-detail__poster > span::before { content: "🍿"; font-size: 65px; }
 .original-title { display: none; }
 .film-detail__poster img { object-fit: cover; }
-@media (max-width: 540px) { .modal label:has(input[type='date']) { min-width: 0; } .modal input[type='date'] { width: 100%; min-width: 0; max-width: 100%; font-size: 16px; } }
+@media (max-width: 540px) { .modal { padding-inline: 14px; } .modal form, .modal .form-columns, .modal label { min-width: 0; max-width: 100%; } .modal input[type='date'] { display: block; inline-size: 100%; min-inline-size: 0; max-inline-size: 100%; padding-inline: 8px; font-size: 16px; -webkit-appearance: none; appearance: none; } }
 @media (max-width: 540px) { .film-hero { padding: 30px 22px; } .film-controls { justify-content: stretch; } .film-controls label { grid-template-columns: auto minmax(0, 1fr); } }
