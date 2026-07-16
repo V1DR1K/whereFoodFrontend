@@ -48,9 +48,7 @@ a {
   display: grid;
   place-items: center;
   padding: 24px;
-  background:
-    radial-gradient(circle at 80% 15%, #53304d88, transparent 28%),
-    radial-gradient(circle at 20% 88%, #48531c88, transparent 28%), #121112e8;
+  background: transparent;
 }
 .login-card {
   width: min(420px, 100%);
@@ -160,6 +158,10 @@ a {
   border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+}
+.app-shell:has(.modal-backdrop) .app-header {
+  position: static;
+  z-index: 0;
 }
 .brand {
   font: 700 31px/0.9 "Fraunces";
@@ -982,8 +984,14 @@ a {
 .film-hero { position: relative; min-height: 270px; overflow: hidden; border: 1px solid #51476f; border-radius: 24px; padding: 36px 6% 25px; background: radial-gradient(circle at 85% 50%, #9e8eff38, transparent 26%), linear-gradient(115deg, #201c35, #1d1b27); }
 .film-hero::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 58%, #b7abff0c); }
 .film-hero > * { position: relative; z-index: 1; }
-.film-controls { justify-content: flex-end; border-top: 1px solid var(--line); padding: 13px 0; }
-.film-controls label { grid-template-columns: auto minmax(125px, 180px); }
+.film-controls { display: grid; justify-content: stretch; gap: 14px; border-top: 1px solid var(--line); padding: 13px 0; }
+.film-filter { display: grid; gap: 8px; }
+.film-filter > span { color: var(--muted); font: 500 11px "DM Mono"; letter-spacing: .8px; }
+.film-filter .chips { flex-wrap: wrap; overflow: visible; }
+.film-filter .chips button { background: #a978ff14; }
+.film-filter .chips button.selected { background: #a978ff22; }
+.film-filter-more { letter-spacing: 1px; }
+.film-filter-dialog { margin-top: 20px; }
 .film-form { display: grid; gap: 2px; }
 .film-form .form-columns { margin: 0; }
 .film-form .tag-picker { margin: 12px 0 4px; }
@@ -992,5 +1000,8 @@ a {
 .film-genre-picker .tag-options { max-height: 145px; }
 .film-poster { aspect-ratio: var(--film-poster-ratio, 2 / 3); }
 .film-detail__poster { aspect-ratio: var(--film-poster-ratio, 2 / 3); min-height: 0; }
+.film-detail__poster > span { font-size: 0; }
+.film-detail__poster > span::before { content: "🍿"; font-size: 65px; }
+.original-title { display: none; }
 .film-detail__poster img { object-fit: cover; }
 @media (max-width: 540px) { .film-hero { padding: 30px 22px; } .film-controls { justify-content: stretch; } .film-controls label { grid-template-columns: auto minmax(0, 1fr); } }
