@@ -9,6 +9,7 @@ import {
   type PlaceReviewInput,
 } from "./places";
 import { Modal } from "../../components/ui/Modal";
+import { ReviewPrompt } from "../../components/ui/ReviewPrompt";
 import { StarRating } from "../../components/ui/StarRating";
 import { session } from "../../lib/api";
 import type { Place } from "../../types/domain";
@@ -47,6 +48,7 @@ export function PlaceForm({
     ambiance: ownReview?.ambiance ?? 4,
   });
   const [file, setFile] = useState<File>();
+  const [created, setCreated] = useState<Place>();
   const [categoryId, setCategoryId] = useState(() =>
     place?.category.id ? String(place.category.id) : "",
   );
@@ -100,14 +102,16 @@ export function PlaceForm({
       } as PlaceReviewInput);
       return saved;
     },
-    onSuccess: async () => {
+    onSuccess: async (value) => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["places"] }),
         qc.invalidateQueries({ queryKey: ["place", place?.id] }),
       ]);
+      if (!place) { setCreated(value); return; }
       onClose();
     },
   });
+  if (created) return <ReviewPrompt name={created.name} reviewTo={`/food/places/${created.id}`} onClose={onClose} />;
   return (
     <Modal onClose={onClose}>
       <form

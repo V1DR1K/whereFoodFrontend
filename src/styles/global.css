@@ -1000,6 +1000,10 @@ a {
 .food-filter .chips button.selected { background: #d4ef5520; }
 .food-filter-more { letter-spacing: 1px; }
 .food-filter-dialog { margin-top: 20px; }
+.review-prompt { display: grid; gap: 14px; }
+.review-prompt h2, .review-prompt p { margin: 0; }
+.review-prompt p:not(.eyebrow) { color: var(--muted); line-height: 1.5; }
+.review-prompt .secondary-button { justify-self: center; }
 .film-form { display: grid; gap: 2px; }
 .film-form .form-columns { margin: 0; }
 .film-form .tag-picker { margin: 12px 0 4px; }
