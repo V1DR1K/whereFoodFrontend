@@ -8,6 +8,7 @@ import { ItemForm } from "../items/ItemForm";
 import { PlaceForm } from "./PlaceForm";
 import { LoadMore } from "../../components/ui/Pagination";
 import { StarRating } from "../../components/ui/StarRating";
+import { AdaptivePhoto } from "../../components/ui/AdaptivePhoto";
 import { session } from "../../lib/api";
 import type { Item } from "../../types/domain";
 
@@ -67,7 +68,7 @@ export function PlaceDetailPage() {
   const username = session.get()?.username;
   const pending = venue.status === "PENDING";
   const mapsUrl = venue.mapsUrl || mapsSearch(venue.address);
-  const coverPhoto = venue.thumbnailUrl || venue.photoUrl;
+  const coverPhoto = venue.photoUrl || venue.thumbnailUrl;
   const itemList =
     items.data?.pages.flatMap((page) =>
       Array.isArray(page.content) ? page.content : [],
@@ -85,10 +86,12 @@ export function PlaceDetailPage() {
       <div className="detail-heading">
         <div className="place-cover">
           {coverPhoto ? (
-            <img
-              className="place-hero-photo"
-              src={coverPhoto}
+            <AdaptivePhoto
               alt={`Foto de ${venue.name}`}
+              context="place"
+              height={venue.photoHeight}
+              src={coverPhoto}
+              width={venue.photoWidth}
             />
           ) : (
             <span className="place-cover-empty">{venue.category.icon}</span>

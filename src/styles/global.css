@@ -695,3 +695,70 @@ header {
     font-size: 30px;
   }
 }
+
+/* Detail media keeps its original composition and only changes its card shape. */
+.detail .place-cover {
+  height: auto;
+  margin-bottom: 24px;
+}
+.adaptive-photo {
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #090909;
+  color: inherit;
+  line-height: 0;
+}
+.adaptive-photo--place {
+  border-radius: 18px;
+}
+.adaptive-photo--item {
+  border-radius: 10px;
+}
+.adaptive-photo__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 520px;
+  margin: 0 auto;
+  object-fit: contain;
+  background: #090909;
+  transition: transform 0.2s ease;
+}
+.adaptive-photo--portrait {
+  width: min(100%, 430px);
+  margin-inline: auto;
+}
+.adaptive-photo--portrait .adaptive-photo__image {
+  max-height: 68svh;
+}
+.adaptive-photo--landscape .adaptive-photo__image {
+  max-height: 440px;
+}
+.adaptive-photo:hover .adaptive-photo__image,
+.adaptive-photo:focus-visible .adaptive-photo__image {
+  transform: scale(1.015);
+}
+.adaptive-photo:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+.item-card .adaptive-photo__image {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: auto;
+  object-fit: contain !important;
+}
+@media (max-width: 540px) {
+  .detail .place-cover {
+    margin-bottom: 18px;
+  }
+  .adaptive-photo--landscape .adaptive-photo__image {
+    max-height: 42svh;
+  }
+  .adaptive-photo--portrait .adaptive-photo__image {
+    max-height: 68svh;
+  }
+}

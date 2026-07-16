@@ -1,6 +1,7 @@
 import type { Item } from "../../types/domain";
+import { AdaptivePhoto } from "../../components/ui/AdaptivePhoto";
 import { StarRating } from "../../components/ui/StarRating";
-import { useState } from "react";
+
 export function ItemCard({
   item,
   onEdit,
@@ -11,18 +12,17 @@ export function ItemCard({
   canEdit: boolean;
 }) {
   const photoUrl = item.photoUrl ?? item.thumbnailUrl;
-  const [expanded, setExpanded] = useState(false);
+
   return (
     <article className="item-card">
       {photoUrl && (
-        <button
-          className="item-photo-button"
-          type="button"
-          onClick={() => setExpanded(true)}
-          aria-label={`Ampliar foto de ${item.name}`}
-        >
-          <img src={photoUrl} alt={`Foto de ${item.name}`} />
-        </button>
+        <AdaptivePhoto
+          alt={`Foto de ${item.name}`}
+          context="item"
+          height={item.photoHeight}
+          src={photoUrl}
+          width={item.photoWidth}
+        />
       )}
       <div>
         <div className="item-card-heading">
@@ -50,27 +50,6 @@ export function ItemCard({
           </span>
         </div>
       </div>
-      {expanded && photoUrl && (
-        <div
-          className="photo-lightbox"
-          role="presentation"
-          onClick={() => setExpanded(false)}
-        >
-          <button
-            className="photo-lightbox-close"
-            type="button"
-            aria-label="Cerrar foto ampliada"
-            onClick={() => setExpanded(false)}
-          >
-            ×
-          </button>
-          <img
-            src={photoUrl}
-            alt={`Foto ampliada de ${item.name}`}
-            onClick={(event) => event.stopPropagation()}
-          />
-        </div>
-      )}
     </article>
   );
 }
