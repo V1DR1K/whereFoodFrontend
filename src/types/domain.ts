@@ -8,5 +8,4 @@ export type Slice<T>={content:T[];nextCursor:number|null};
 export type Session={token:string;username:string;role:'USER'|'ADMIN'};
 export type WatchPlatform={id:number;name:string;icon:string;active:boolean};
 export type FilmReview={author:string;rating:number;comment?:string;watchedOn?:string};
-export type Film={id:number;tmdbId?:number;title:string;originalTitle?:string;synopsis?:string;releaseDate?:string;posterUrl?:string;genres:string[];platform?:WatchPlatform;watchedCount:number;lastWatchedOn?:string;author:string;reviews:FilmReview[];createdAt:string};
-export type CatalogFilm={tmdbId:number;title:string;originalTitle?:string;synopsis?:string;releaseDate?:string;posterPath?:string;genres:string[]};
+export type Film={id:number;title:string;originalTitle?:string;synopsis?:string;releaseDate?:string;posterUrl?:string;genres:string[];platform?:WatchPlatform;watchedCount:number;lastWatchedOn?:string;author:string;reviews:FilmReview[];createdAt:string};
