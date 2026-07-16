@@ -4,9 +4,9 @@ import type { Film } from '../../types/domain';
 import { Modal } from '../../components/ui/Modal';
 import { adjustWatchCount, getFilmGenres, getPlatforms, saveFilm, saveFilmGenre, type FilmInput, uploadFilmPhoto } from './films';
 
-const inputFrom = (form: FormData): Omit<FilmInput, 'genres'> => ({
+const inputFrom = (form: FormData, synopsis?: string): Omit<FilmInput, 'genres'> => ({
   title: String(form.get('title')).trim(),
-  synopsis: String(form.get('review')).trim() || undefined,
+  synopsis,
   watchedOn: String(form.get('watchedOn')) || undefined,
   platformId: form.get('platformId') ? Number(form.get('platformId')) : undefined,
 });
@@ -29,7 +29,7 @@ export function FilmForm({ onClose, film }: { onClose: () => void; film?: Film }
   });
   const save = useMutation({
     mutationFn: async (data: FormData) => {
-      const saved = await saveFilm({ ...inputFrom(data), genres }, film?.id);
+      const saved = await saveFilm({ ...inputFrom(data, film?.synopsis), genres }, film?.id);
       const watchedOn = String(data.get('watchedOn')) || undefined;
       const watched = !film && watchedOn ? await adjustWatchCount(saved.id, 1, watchedOn) : saved;
       return file ? uploadFilmPhoto(watched.id, file) : watched;
@@ -44,7 +44,6 @@ export function FilmForm({ onClose, film }: { onClose: () => void; film?: Film }
     <p className="eyebrow">{film ? 'EDITAR PELÍCULA' : 'NUEVA PELÍCULA'}</p>
     <h2>{film ? 'Afinemos la ficha' : '¿Qué quieren guardar?'}</h2>
     <label>Título<input name="title" defaultValue={film?.title} required autoFocus /></label>
-    <label>Reseña<textarea name="review" defaultValue={film?.synopsis} placeholder="¿Qué les pareció?" /></label>
     <div className="form-columns"><label>Fecha vista<input name="watchedOn" type="date" defaultValue={film?.lastWatchedOn ?? new Date().toLocaleDateString('sv-SE')} required /></label><label>Plataforma<select name="platformId" defaultValue={film?.platform?.id ?? ''}><option value="">Todavía no sabemos</option>{availablePlatforms.map(platform => <option key={platform.id} value={platform.id}>{platform.icon} {platform.name}{!platform.active ? ' (inactiva)' : ''}</option>)}</select></label></div>
     <label>Foto o póster<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event => setFile(event.target.files?.[0])} /></label>
     <small className="tiny">{file ? `Se cargará ${file.name}.` : film?.posterUrl ? 'La imagen actual se conservará si no elegís otra.' : 'Podés subir una imagen; se adapta automáticamente a los mosaicos.'}</small>
