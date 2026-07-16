@@ -5,11 +5,14 @@ export type ItemInput = {
   comment?: string;
   taste: number;
   price: number;
+  visitDate: string;
 };
-export const getItems = (placeId: number, cursor?: number) =>
+export const getItems = (placeId: number, visitDate?: string) =>
   api<Slice<Item>>(
-    `/items?placeId=${placeId}&size=12${cursor ? `&cursor=${cursor}` : ""}`,
+    `/items?placeId=${placeId}${visitDate ? `&visitDate=${visitDate}` : ""}`,
   );
+export const getItemDates = (placeId: number) =>
+  api<string[]>(`/places/${placeId}/item-dates`);
 export const saveItem = (placeId: number, input: ItemInput, id?: number) =>
   api<Item>(id ? `/items/${id}` : `/places/${placeId}/items`, {
     method: id ? "PUT" : "POST",
@@ -20,3 +23,5 @@ export const uploadPhoto = (id: number, file: File) => {
   data.append("file", file);
   return api<Item>(`/items/${id}/photo`, { method: "POST", body: data });
 };
+export const deleteItem = (id: number) =>
+  api<void>(`/items/${id}`, { method: "DELETE" });

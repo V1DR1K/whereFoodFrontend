@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { saveItem, uploadPhoto } from "./items";
+import { deleteItem, saveItem, uploadPhoto } from "./items";
 import { Modal } from "../../components/ui/Modal";
 import { StarRating } from "../../components/ui/StarRating";
 import type { Item } from "../../types/domain";
@@ -19,6 +19,12 @@ export function ItemForm({
   });
   const [file, setFile] = useState<File>();
   const qc = useQueryClient();
+  const invalidateItems = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["items", placeId] }),
+      qc.invalidateQueries({ queryKey: ["item-dates", placeId] }),
+      qc.invalidateQueries({ queryKey: ["place", placeId] }),
+    ]);
   const mutation = useMutation({
     mutationFn: async (form: FormData) => {
       const saved = await saveItem(
@@ -27,16 +33,21 @@ export function ItemForm({
           name: String(form.get("name")),
           comment: String(form.get("comment")) || undefined,
           ...scores,
+          visitDate: String(form.get("visitDate")),
         },
         item?.id,
       );
       return file ? uploadPhoto(saved.id, file) : saved;
     },
     onSuccess: async () => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["items", placeId] }),
-        qc.invalidateQueries({ queryKey: ["place", placeId] }),
-      ]);
+      await invalidateItems();
+      onClose();
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteItem(item!.id),
+    onSuccess: async () => {
+      await invalidateItems();
       onClose();
     },
   });
@@ -71,6 +82,15 @@ export function ItemForm({
             placeholder="Tu observación honesta…"
           />
         </label>
+        <label>
+          Fecha de visita
+          <input
+            name="visitDate"
+            type="date"
+            required
+            defaultValue={item?.visitDate ?? new Date().toLocaleDateString("sv-SE")}
+          />
+        </label>
         <div className="score-grid">
           {(["taste", "price"] as const).map((key) => (
             <label className="score-field" key={key}>
@@ -103,7 +123,7 @@ export function ItemForm({
             ? "La foto actual se conservará si no elegís otra."
             : ""}
         </small>
-        <button className="main-button" disabled={mutation.isPending}>
+        <button className="main-button" disabled={mutation.isPending || deleteMutation.isPending}>
           {mutation.isPending
             ? "Guardando…"
             : item
@@ -111,8 +131,22 @@ export function ItemForm({
               : "Guardar reseña"}{" "}
           ✦
         </button>
-        {mutation.error && (
-          <p className="form-error">{mutation.error.message}</p>
+        {item && (
+          <button
+            className="danger-button"
+            type="button"
+            disabled={mutation.isPending || deleteMutation.isPending}
+            onClick={() => {
+              if (window.confirm("¿Querés borrar este ítem? Podrás conservarlo en la base, pero dejará de mostrarse.")) {
+                deleteMutation.mutate();
+              }
+            }}
+          >
+            {deleteMutation.isPending ? "Borrando…" : "Borrar ítem"}
+          </button>
+        )}
+        {(mutation.error || deleteMutation.error) && (
+          <p className="form-error">{(mutation.error || deleteMutation.error)!.message}</p>
         )}
       </form>
     </Modal>
