@@ -86,7 +86,7 @@ export function PlaceDetailPage() {
 
   return (
     <section className="detail">
-      <Link to="/">← Volver al mapa</Link>
+      <Link to="/food">← Volver al mapa</Link>
       <div className="detail-heading">
         <div className="place-cover">
           {coverPhotoSrc ? (

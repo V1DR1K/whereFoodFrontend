@@ -9,7 +9,7 @@ export function PlaceCard({ place }: { place: Place }) {
   return (
     <Link
       className="place-card-link"
-      to={`/places/${place.id}`}
+      to={`/food/places/${place.id}`}
       aria-label={`Ver detalle de ${place.name}`}
     >
       <article className={`place-card ${pending ? "pending-card" : ""}`}>

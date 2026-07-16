@@ -1,0 +1,8 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Modal } from '../../components/ui/Modal';
+import { StarRating } from '../../components/ui/StarRating';
+import type { Film, FilmReview } from '../../types/domain';
+import { saveFilmReview } from './films';
+
+export function FilmReviewForm({film,review,onClose}:{film:Film;review?:FilmReview;onClose:()=>void}){const qc=useQueryClient();const [rating,setRating]=useState(review?.rating??4);const mutation=useMutation({mutationFn:(form:FormData)=>saveFilmReview(film.id,{rating,comment:String(form.get('comment')).trim()||undefined,watchedOn:String(form.get('watchedOn'))||undefined}),onSuccess:async()=>{await Promise.all([qc.invalidateQueries({queryKey:['film',film.id]}),qc.invalidateQueries({queryKey:['films']})]);onClose()}});return <Modal onClose={onClose}><form onSubmit={event=>{event.preventDefault();mutation.mutate(new FormData(event.currentTarget))}}><p className="eyebrow">MI RESEÑA</p><h2>{film.title}</h2><label className="film-rating">¿Cuánto te gustó?<StarRating label="Puntuación de la película" value={rating} onChange={setRating}/></label><label>Fecha en que la viste<input name="watchedOn" type="date" defaultValue={review?.watchedOn??film.lastWatchedOn??new Date().toLocaleDateString('sv-SE')}/></label><label>Reseña<textarea name="comment" defaultValue={review?.comment} placeholder="La volvería a ver porque…"/></label><button className="main-button" disabled={mutation.isPending}>{mutation.isPending?'Guardando…':'Guardar mi reseña'} ✦</button>{mutation.error&&<p className="form-error">{mutation.error.message}</p>}</form></Modal>}
