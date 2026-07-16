@@ -7,5 +7,6 @@ export type Item={id:number;name:string;comment?:string;taste:number;price:numbe
 export type Slice<T>={content:T[];nextCursor:number|null};
 export type Session={token:string;username:string;role:'USER'|'ADMIN'};
 export type WatchPlatform={id:number;name:string;icon:string;active:boolean};
+export type FilmGenreOption={id:number;name:string;emoji:string};
 export type FilmReview={author:string;rating:number;comment?:string;watchedOn?:string};
-export type Film={id:number;title:string;originalTitle?:string;synopsis?:string;releaseDate?:string;posterUrl?:string;genres:string[];platform?:WatchPlatform;watchedCount:number;lastWatchedOn?:string;author:string;reviews:FilmReview[];createdAt:string};
+export type Film={id:number;title:string;originalTitle?:string;synopsis?:string;releaseDate?:string;posterUrl?:string;thumbnailUrl?:string;posterWidth?:number;posterHeight?:number;genres:string[];platform?:WatchPlatform;watchedCount:number;lastWatchedOn?:string;author:string;reviews:FilmReview[];createdAt:string};

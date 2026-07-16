@@ -1,4 +1,25 @@
-import { Link,Outlet,useLocation,useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { session } from '../lib/api';
 import { logout } from '../features/auth/auth';
-export function AppLayout(){const navigate=useNavigate();const location=useLocation();const user=session.get();const canManage=user?.role==='ADMIN'||user?.username==='avril';const inFood=location.pathname.startsWith('/food');const inFilms=location.pathname.startsWith('/films');const brand=inFood?'wherefood':inFilms?'whichfilm':'T&A Picks';const settingsLink=inFood?'/food/categories':'/films/platforms';return <main className={`app-shell ${inFilms?'film-shell':''}`}><header className="app-header"><Link className="brand" to="/" aria-label="T&A Picks, ir al selector">{inFood?'where':inFilms?'which':'T&A '}<span>{inFood?'food':inFilms?'film':'Picks'}</span><i>{inFood?'✦':inFilms?'✺':'♥'}</i></Link><div className="header-actions">{(inFood||inFilms)&&<Link className="round" to="/" aria-label="Cambiar de aplicación" title="Cambiar de aplicación">⌂</Link>}{canManage&&(inFood||inFilms)&&<Link className="round" to={settingsLink} aria-label={`Configurar ${brand}`} title="Configuración">⚙</Link>}<button className="avatar" aria-label={`Cerrar sesión de ${user?.username ?? 'usuario'}`} title="Cerrar sesión" onClick={()=>{logout();navigate('/login')}}>{user?.username[0].toUpperCase()}</button></div></header><Outlet/></main>}
+
+export function AppLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const user = session.get();
+  const canManage = user?.role === 'ADMIN' || user?.username === 'avril';
+  const inFood = location.pathname.startsWith('/food');
+  const inFilms = location.pathname.startsWith('/films');
+  const settingsLink = inFood ? '/food/categories' : '/films/platforms';
+
+  return <main className={`app-shell ${inFilms ? 'film-shell' : ''}`}>
+    <header className="app-header">
+      <Link className="brand" to="/" aria-label="T&A Pick, ir al selector">T&A <span>Pick</span><i>✦</i></Link>
+      <div className="header-actions">
+        {(inFood || inFilms) && <Link className="round" to="/" aria-label="Cambiar de aplicación" title="Cambiar de aplicación">⌂</Link>}
+        {canManage && (inFood || inFilms) && <Link className="round" to={settingsLink} aria-label="Configuración" title="Configuración">⚙</Link>}
+        <button className="avatar" aria-label={`Cerrar sesión de ${user?.username ?? 'usuario'}`} title="Cerrar sesión" onClick={() => { logout(); navigate('/login'); }}>{user?.username[0].toUpperCase()}</button>
+      </div>
+    </header>
+    <Outlet />
+  </main>;
+}

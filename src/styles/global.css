@@ -969,3 +969,21 @@ a {
 @media (max-width:540px) { .picks-dashboard{padding-top:35px}.picks-dashboard>h1{font-size:47px;letter-spacing:-2px}.picks-orbit{top:12px;right:-15px;font-size:17px}.picks-orbit span{width:40px;height:40px;font-size:20px}.picks-orbit b{display:none}.module-picker{grid-template-columns:1fr;gap:15px;margin-top:34px}.module-card{min-height:220px;border-radius:20px}.film-hero{grid-template-columns:minmax(0,1fr) 94px;min-height:210px;padding-top:28px;overflow:clip}.film-hero h1{font-size:45px;letter-spacing:-2px}.film-hero-art{justify-self:end;font-size:82px;transform:rotate(-4deg)}.film-hero-art span,.film-hero-art b{right:0}.film-controls{align-items:stretch;flex-direction:column}.film-controls label{grid-template-columns:auto minmax(0,1fr)}.film-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.film-card__body{min-height:165px;padding:10px}.film-card__body h3{font-size:17px}.film-card__body footer{display:grid;gap:4px}.form-columns{grid-template-columns:1fr}.film-detail__head{grid-template-columns:105px minmax(0,1fr);gap:15px}.film-detail__poster{min-height:158px;border-radius:13px}.film-detail h1{font-size:35px}.film-detail__head .detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.film-detail__head .detail-actions button{width:100%;padding:10px 7px;font-size:12px}.watch-counter{align-items:stretch;flex-direction:column;padding:17px}.watch-counter>div:last-of-type{display:grid;grid-template-columns:46px minmax(0,1fr)}.film-review-columns{grid-template-columns:1fr}.platform-settings-form{grid-template-columns:52px minmax(0,1fr)}.platform-settings-form .main-button{grid-column:1/-1}.platform-list article{grid-template-columns:39px minmax(0,1fr) auto}.platform-list article .text-button:last-child{grid-column:2/4;justify-self:start} }
 @media (max-width:540px) { .heart-rain span:nth-child(3n) { display: none; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; } .heart-rain span { animation:none; opacity:.1; transform:translateY(16vh); } }
+
+/* WhichFilm shares the food app's framed banner and resilient form layout. */
+.film-shell .app-header::before { background: color-mix(in srgb, var(--bg) 94%, transparent); }
+.film-hero { position: relative; min-height: 270px; overflow: hidden; border: 1px solid #51476f; border-radius: 24px; padding: 36px 6% 25px; background: radial-gradient(circle at 85% 50%, #9e8eff38, transparent 26%), linear-gradient(115deg, #201c35, #1d1b27); }
+.film-hero::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 58%, #b7abff0c); }
+.film-hero > * { position: relative; z-index: 1; }
+.film-controls { justify-content: flex-end; border-top: 1px solid var(--line); padding: 13px 0; }
+.film-controls label { grid-template-columns: auto minmax(125px, 180px); }
+.film-form { display: grid; gap: 2px; }
+.film-form .form-columns { margin: 0; }
+.film-form .tag-picker { margin: 12px 0 4px; }
+.film-form input[type='file'] { padding: 9px; color: var(--muted); }
+.film-form input[type='file']::file-selector-button { margin-right: 10px; border: 1px solid #8579bd; border-radius: 7px; padding: 6px 9px; background: #29243c; color: #eeeaff; cursor: pointer; }
+.film-genre-picker .tag-options { max-height: 145px; }
+.film-poster { aspect-ratio: var(--film-poster-ratio, 2 / 3); }
+.film-detail__poster { aspect-ratio: var(--film-poster-ratio, 2 / 3); min-height: 0; }
+.film-detail__poster img { object-fit: cover; }
+@media (max-width: 540px) { .film-hero { padding: 30px 22px; } .film-controls { justify-content: stretch; } .film-controls label { grid-template-columns: auto minmax(0, 1fr); } }
