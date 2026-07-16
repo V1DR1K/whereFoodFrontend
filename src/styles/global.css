@@ -133,13 +133,27 @@ a {
 .app-shell {
   max-width: 1240px;
   margin: auto;
-  padding: 20px 28px 70px;
+  padding: 0 28px 70px;
 }
-header {
+.app-header {
   height: 68px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  isolation: isolate;
+}
+.app-header::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc((100vw - min(1240px, 100vw)) / -2);
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 .brand {
   font: 700 31px/0.9 "Fraunces";
@@ -168,6 +182,21 @@ header {
   height: 38px;
   border-radius: 50%;
   text-decoration: none;
+  flex: 0 0 auto;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+.round:hover,
+.round:focus-visible,
+.avatar:hover,
+.avatar:focus-visible {
+  transform: translateY(-1px);
+  border-color: #6a6266;
+}
+.round:focus-visible,
+.avatar:focus-visible,
+.brand:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
 }
 .avatar {
   background: var(--lime);
@@ -392,11 +421,21 @@ header {
   place-items: center;
   padding: 20px;
   z-index: 5;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .modal {
-  width: min(560px, 100%);
+  width: min(560px, calc(100vw - 40px));
+  max-width: 100%;
+  min-width: 0;
   max-height: 90vh;
-  overflow: auto;
+  max-height: calc(100svh - 40px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: #211f21;
   border: 1px solid #5a4a52;
   border-radius: 20px;
@@ -505,7 +544,21 @@ header {
 }
 @media (max-width: 540px) {
   .app-shell {
-    padding: 14px 16px 45px;
+    padding: 0 16px 45px;
+  }
+  .app-header {
+    height: 62px;
+  }
+  .brand {
+    font-size: clamp(25px, 8vw, 31px);
+  }
+  .header-actions {
+    gap: 8px;
+  }
+  .round,
+  .avatar {
+    width: 36px;
+    height: 36px;
   }
   .hero {
     padding: 30px 22px;
@@ -795,7 +848,7 @@ header {
 .tag-settings-form { grid-template-columns: 64px minmax(0, 1fr) auto; }
 .category-settings-form { grid-template-columns: minmax(0, 1fr) 64px auto; }
 @media (max-width: 700px) { .settings-grid { grid-template-columns: 1fr; gap: 28px; } .tag-settings-form { grid-template-columns: 58px minmax(0, 1fr); } .tag-settings-form .main-button { grid-column: 1 / -1; } }
-@media (max-width: 540px) { .modal { padding: 24px 18px; max-height: 92svh; } .tag-create-row { grid-template-columns: 46px minmax(0, 1fr); } .tag-create-row .secondary-button { grid-column: 1 / -1; } }
+@media (max-width: 540px) { .modal-backdrop { padding: 16px; } .modal { width: 100%; padding: 24px 18px; max-height: calc(100svh - 32px); } .tag-create-row { grid-template-columns: 46px minmax(0, 1fr); } .tag-create-row .secondary-button { grid-column: 1 / -1; } }
 @media (max-width: 540px) {
   .detail .place-cover {
     margin-bottom: 18px;
