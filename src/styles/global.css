@@ -864,7 +864,7 @@ a {
   }
 }
 
-/* T&A Picks and WhichFilm */
+/* WhatPlan and WhichFilm */
 .picks-dashboard { position: relative; max-width: 1030px; margin: 0 auto; padding: clamp(34px, 7vw, 86px) 0 45px; overflow: hidden; }
 .picks-dashboard > h1 { position: relative; max-width: 760px; margin: 8px 0 15px; font: 600 clamp(43px, 7vw, 78px)/.94 "Fraunces"; letter-spacing: -3px; }
 .picks-dashboard > h1 span { color: var(--lime); font: 400 .62em/1 sans-serif; letter-spacing: 0; }

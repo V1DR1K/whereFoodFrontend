@@ -13,7 +13,7 @@ export function AppLayout() {
 
   return <main className={`app-shell ${inFilms ? 'film-shell' : ''}`}>
     <header className="app-header">
-      <Link className="brand" to="/" aria-label="T&A Pick, ir al selector">T&A <span>Pick</span><i>✦</i></Link>
+      <Link className="brand" to="/" aria-label="WhatPlan, ir al selector">What<span>Plan</span><i>✦</i></Link>
       <div className="header-actions">
         {(inFood || inFilms) && <Link className="round" to="/" aria-label="Cambiar de aplicación" title="Cambiar de aplicación">⌂</Link>}
         {canManage && (inFood || inFilms) && <Link className="round" to={settingsLink} aria-label="Configuración" title="Configuración">⚙</Link>}

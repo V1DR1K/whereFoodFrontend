@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 export function DashboardPage() {
   return <section className="picks-dashboard">
     <div className="picks-orbit" aria-hidden="true">✨ <span>🍿</span> <b>🍋</b></div>
-    <p className="eyebrow">T&A PICKS · NUESTRO RINCÓN</p>
+    <p className="eyebrow">WHATPLAN · NUESTRO RINCÓN</p>
     <h1>Hola Tomás y Avril <span>✨</span><br />¿qué van a hacer hoy?</h1>
     <p className="intro">Un lugar para anotar y reseñar todos sus planes</p>
     <div className="module-picker">
