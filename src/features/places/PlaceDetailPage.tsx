@@ -96,11 +96,6 @@ export function PlaceDetailPage() {
           ) : (
             <span className="place-cover-empty">{venue.category.icon}</span>
           )}
-          {coverPhoto && (
-            <span className="place-avatar" aria-label={venue.category.name}>
-              {venue.category.icon}
-            </span>
-          )}
         </div>
         <div>
           <p className="eyebrow">
