@@ -865,6 +865,7 @@ a {
 .settings-page > .intro { max-width: 650px; margin-left: 0; }
 .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px; margin-top: 28px; }
 .settings-grid h3 { font: 600 22px "Fraunces"; margin: 0; }
+.settings-add-button { width: 100%; margin: 12px 0 18px; text-align: center; }
 .tag-settings-form { grid-template-columns: 64px minmax(0, 1fr) auto; }
 .category-settings-form { grid-template-columns: minmax(0, 1fr) 64px auto; }
 @media (max-width: 700px) { .settings-grid { grid-template-columns: 1fr; gap: 28px; } .tag-settings-form { grid-template-columns: 58px minmax(0, 1fr); } .tag-settings-form .main-button { grid-column: 1 / -1; } }
