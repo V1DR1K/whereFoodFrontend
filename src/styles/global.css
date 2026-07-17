@@ -389,6 +389,11 @@ a {
 .star-control button:disabled {
   cursor: default;
 }
+.segmented-level { display:flex; min-width:0; flex:1; gap:3px; }
+.segmented-level span,.segmented-level button { flex:1; min-width:0; height:8px; border:1px solid #5c5555; border-radius:3px; padding:0; background:#292629; }
+.segmented-level .filled { border-color:#b7abff; background:#b7abff; }
+.segmented-level--input button { min-height:24px; cursor:pointer; }
+.segmented-level--input button:focus-visible { outline:2px solid var(--lime); outline-offset:2px; }
 .rating-preview {
   display: flex;
   justify-content: space-between;
@@ -930,6 +935,14 @@ a {
 .film-card__body h3 { margin:7px 0; font:600 19px/1.02 "Fraunces"; }
 .film-card__body>b { flex: 0 0 auto; color:var(--lime); white-space:nowrap; }
 .film-card__body>b span { color:#f0cf55; }
+.film-card__rating { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:6px; margin:2px 0 7px; }
+.film-card__rating>span,.film-card__metrics span { color:var(--muted); font:500 9px "DM Mono"; letter-spacing:.3px; }
+.film-card__rating i { display:flex; min-width:0; color:#5c5555; font-size:12px; font-style:normal; letter-spacing:1px; }
+.film-card__rating i .filled { color:#ffc52e; }
+.film-card__rating strong,.film-card__metrics b { color:var(--lime); font:600 11px "DM Mono"; }
+.film-card__metrics { display:grid; gap:5px; margin:0 0 7px; }
+.film-card__metrics>div { display:grid; grid-template-columns:68px minmax(0,1fr) 24px; align-items:center; gap:5px; }
+.film-card__metrics .segmented-level { min-height:8px; }
 .film-card__body footer { display:flex; justify-content:space-between; gap:8px; align-self:end; color:var(--muted); font-size:10px; }
 .film-card__body footer span:last-child { color:#bdb1ff; }
 .genre-pills { display:flex; flex-wrap:wrap; gap:5px; margin:5px 0 12px; }
@@ -963,9 +976,19 @@ a {
 .film-review-card .star-control button { min-width:20px; padding:0; font-size:17px; }
 .film-review-card p { color:#ddd8dc; font-size:13px; line-height:1.45; }
 .film-review-card>small { color:var(--muted); font-size:11px; }
+.film-review-metrics { display:grid; gap:7px; margin:10px 0; }
+.film-review-metrics>div { display:grid; grid-template-columns:78px minmax(0,1fr) auto; align-items:center; gap:7px; }
+.film-review-metrics span,.film-review-metrics small { color:var(--muted); font-size:10px; }
+.film-review-comment { white-space:pre-wrap; }
 .muted { color:var(--muted)!important; }
 .film-rating { align-items:start!important; }
 .film-rating .star-control { margin-top:5px; }
+.film-metric-fields { display:grid; gap:10px; margin:14px 0; border:0; padding:0; }
+.film-metric-fields legend { margin-bottom:8px; color:#d5ced0; font-size:12px; }
+.film-metric-field { display:grid; gap:6px; }
+.film-metric-field>div:first-child { display:flex; justify-content:space-between; gap:12px; }
+.film-metric-field strong { color:#d5ced0; font-size:12px; font-weight:500; }
+.film-metric-field small { color:var(--muted); font-size:11px; }
 .platform-settings { max-width:720px; margin-top:27px; }
 .platform-settings-form { grid-template-columns:64px minmax(0,1fr) auto; }
 .platform-list { display:grid; gap:8px; margin-top:20px; }
