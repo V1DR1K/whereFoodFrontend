@@ -29,7 +29,7 @@ export function WhichFilmPage() {
   const genreOptions = useQuery({ queryKey: ['film-genres'], queryFn: getFilmGenres });
   const all = filmsQuery.data ?? [];
   const genres = useMemo(() => [...new Set(all.flatMap(film => film.genres))].sort((a, b) => a.localeCompare(b, 'es')), [all]);
-  const filterGenres = genreOptions.data?.length ? genreOptions.data.map(option => ({ id: option.name, label: `${option.emoji} ${option.name}` })) : genres.map(name => ({ id: name, label: `🎞️ ${name}` }));
+  const filterGenres = genreOptions.data?.length ? genreOptions.data.map(option => ({ id: option.name, label: `${option.emoji} ${option.name}` })) : genres.map(name => ({ id: name, label: name }));
   const pending = all.filter(film => film.watchedCount === 0);
   const watched = all.filter(film => film.watchedCount > 0);
   return <>

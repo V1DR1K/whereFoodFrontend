@@ -20,4 +20,5 @@ export const getPlatforms = () => api<WatchPlatform[]>('/watch-platforms');
 export const getAllPlatforms = () => api<WatchPlatform[]>('/watch-platforms/all');
 export const savePlatform = (input: PlatformInput, id?: number) => api<WatchPlatform>(`/watch-platforms${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });
 export const getFilmGenres = () => api<FilmGenreOption[]>('/film-genres');
-export const saveFilmGenre = (input: Pick<FilmGenreOption, 'name' | 'emoji'>) => api<FilmGenreOption>('/film-genres', { method: 'POST', body: JSON.stringify(input) });
+export const saveFilmGenre = (input: Pick<FilmGenreOption, 'name' | 'emoji'>, id?: number) => api<FilmGenreOption>(`/film-genres${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });
+export const deleteFilmGenre = (id: number) => api<void>(`/film-genres/${id}`, { method: 'DELETE' });
