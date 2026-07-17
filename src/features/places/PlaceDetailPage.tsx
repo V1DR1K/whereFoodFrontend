@@ -16,7 +16,14 @@ const mapsSearch = (address?: string) =>
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${address}, Rosario, Santa Fe, Argentina`)}`
     : undefined;
 const reviewLabels: {
-  key: "location" | "heating" | "bathrooms" | "exterior" | "seating" | "service" | "ambiance";
+  key:
+    | "location"
+    | "heating"
+    | "bathrooms"
+    | "exterior"
+    | "seating"
+    | "service"
+    | "ambiance";
   label: string;
 }[] = [
   { key: "location", label: "Ubicación" },
@@ -65,7 +72,11 @@ export function PlaceDetailPage() {
   });
 
   if (!validId || place.isError || (!place.isLoading && !place.data)) {
-    return <p className="form-error">No pudimos cargar ese lugar. Volvé al mapa e intentá de nuevo.</p>;
+    return (
+      <p className="form-error">
+        No pudimos cargar ese lugar. Volvé al mapa e intentá de nuevo.
+      </p>
+    );
   }
   if (place.isLoading) return <p>Cargando lugar…</p>;
 
@@ -91,39 +102,121 @@ export function PlaceDetailPage() {
       <div className="detail-heading">
         <div className="place-cover">
           {coverPhotoSrc ? (
-            <AdaptivePhoto alt={`Foto de ${venue.name}`} context="place" height={venue.photoHeight} src={coverPhotoSrc} width={venue.photoWidth} />
+            <AdaptivePhoto
+              alt={`Foto de ${venue.name}`}
+              context="place"
+              height={venue.photoHeight}
+              src={coverPhotoSrc}
+              width={venue.photoWidth}
+            />
           ) : (
             <span className="place-cover-empty">{venue.category.icon}</span>
           )}
         </div>
         <div>
-          <p className="eyebrow">{pending ? "PENDIENTE · " : ""}{venue.category.name}</p>
+          <p className="eyebrow">
+            {pending ? "PENDIENTE · " : ""}
+            {venue.category.name}
+          </p>
           <h1>{venue.name}</h1>
-          {!!venue.tags?.length && <div className="place-tags place-tags--detail">{venue.tags.map((tag) => <span key={tag.id}>{tag.emoji} {tag.name}</span>)}</div>}
+          {!!venue.tags?.length && (
+            <div className="place-tags place-tags--detail">
+              {venue.tags.map((tag) => (
+                <span key={tag.id}>
+                  {tag.emoji} {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
           <p>
             {mapsUrl ? (
-              <a className="address-link" href={mapsUrl} target="_blank" rel="noreferrer">📍 {venue.address || "Abrir en Google Maps"} ↗</a>
-            ) : venue.address}
-            {!pending && ` · ${score(venue.rating)} ★ · ${venue.itemCount} ítems`}
+              <a
+                className="address-link"
+                href={mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                📍 {venue.address || "Abrir en Google Maps"} ↗
+              </a>
+            ) : (
+              venue.address
+            )}
+            {!pending &&
+              ` · ${score(venue.rating)} ★ · ${venue.itemCount} ítems`}
           </p>
-          {venue.sourceUrl && <a className="source-link" href={venue.sourceUrl} target="_blank" rel="noreferrer">↗ Ver link de referencia</a>}
+          {venue.sourceUrl && (
+            <a
+              className="source-link"
+              href={venue.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              ↗ Ver link de referencia
+            </a>
+          )}
         </div>
         <div className="detail-actions">
-          <button className="secondary-button" onClick={() => setEditingPlace(true)}>{venue.author === username ? "✎ Editar lugar" : "★ Calificar lugar"}</button>
-          <button className="main-button" onClick={() => setEditingItem(null)}>{pending ? "Ya fui, agregar ítem" : "Agregar ítem"}</button>
+          <button
+            className="secondary-button"
+            onClick={() => setEditingPlace(true)}
+          >
+            {venue.author === username ? "✎ Editar lugar" : "★ Calificar lugar"}
+          </button>
+          <button className="main-button" onClick={() => setEditingItem(null)}>
+            {pending ? "Ya fui, agregar ítem" : "Agregar ítem"}
+          </button>
         </div>
       </div>
       {!pending && (
         <section className="watch-counter" aria-label="Contador de visitas">
-          <div><p className="eyebrow">CONTADOR COMPARTIDO</p><h2>{visitDates.length === 0 ? "Todavía no fueron" : `${visitDates.length} ${visitDates.length === 1 ? "vez" : "veces"}`}</h2><p>Última visita: {visitDates[0] ? visitDateLabel(visitDates[0]) : "pendiente"}</p></div>
-          <div><button className="counter-add food-counter-add" onClick={() => setEditingItem(null)}>Fuimos de nuevo 🍽️</button></div>
+          <div>
+            <p className="eyebrow">CONTADOR COMPARTIDO</p>
+            <h2>
+              {visitDates.length === 0
+                ? "Todavía no fueron"
+                : `${visitDates.length} ${visitDates.length === 1 ? "vez" : "veces"}`}
+            </h2>
+            <p>
+              Última visita:{" "}
+              {visitDates[0] ? visitDateLabel(visitDates[0]) : "pendiente"}
+            </p>
+          </div>
+          <div>
+            <button
+              className="counter-add food-counter-add"
+              onClick={() => setEditingItem(null)}
+            >
+              Fuimos de nuevo 🍽️
+            </button>
+          </div>
         </section>
       )}
       {!pending && (
         <section className="rating-breakdown" aria-label="Promedios globales">
-          <div><span>😋 Sabor</span><strong>{score(venue.tasteAverage)}</strong><StarRating label="Promedio de sabor" value={Math.round(venue.tasteAverage || 0)} /></div>
-          <div><span>💸 Precio</span><strong>{score(venue.priceAverage)}</strong><StarRating label="Promedio de precio" value={Math.round(venue.priceAverage || 0)} /></div>
-          <div><span>📍 Lugar</span><strong>{score(venue.venueAverage)}</strong><StarRating label="Promedio del lugar" value={Math.round(venue.venueAverage || 0)} /></div>
+          <div>
+            <span>😋 Sabor</span>
+            <strong>{score(venue.tasteAverage)}</strong>
+            <StarRating
+              label="Promedio de sabor"
+              value={Math.round(venue.tasteAverage || 0)}
+            />
+          </div>
+          <div>
+            <span>💸 Precio</span>
+            <strong>{score(venue.priceAverage)}</strong>
+            <StarRating
+              label="Promedio de precio"
+              value={Math.round(venue.priceAverage || 0)}
+            />
+          </div>
+          <div>
+            <span>📍 Lugar</span>
+            <strong>{score(venue.venueAverage)}</strong>
+            <StarRating
+              label="Promedio del lugar"
+              value={Math.round(venue.venueAverage || 0)}
+            />
+          </div>
         </section>
       )}
       <section className="reviews-section">
@@ -131,38 +224,125 @@ export function PlaceDetailPage() {
         <div className="review-columns">
           {venue.reviews.map((review) => (
             <article className="place-review" key={review.author}>
-              <div className="place-review__heading"><h3>{review.author === username ? "Tu calificación" : `Calificación de ${review.author}`}</h3>{review.author === username && <button className="icon-edit" type="button" aria-label="Editar reseña" onClick={() => setEditingPlace(true)}>✎</button>}</div>
+              <div className="place-review__heading">
+                <h3>
+                  {review.author === username
+                    ? "Tu calificación"
+                    : `Calificación de ${review.author}`}
+                </h3>
+                {review.author === username && (
+                  <button
+                    className="icon-edit"
+                    type="button"
+                    aria-label="Editar reseña"
+                    onClick={() => setEditingPlace(true)}
+                  >
+                    ✎
+                  </button>
+                )}
+              </div>
               {review.comment && <p>{review.comment}</p>}
-              <div>{reviewLabels.map(({ key, label }) => <span key={key}>{label}<StarRating label={label} value={review[key]} /></span>)}</div>
+              <div>
+                {reviewLabels.map(({ key, label }) => (
+                  <span key={key}>
+                    {label}
+                    <StarRating label={label} value={review[key]} />
+                  </span>
+                ))}
+              </div>
             </article>
           ))}
-          {!venue.reviews.length && <p className="empty-state">Todavía no hay calificaciones del lugar.</p>}
+          {!venue.reviews.length && (
+            <p className="empty-state">
+              Todavía no hay calificaciones del lugar.
+            </p>
+          )}
         </div>
       </section>
-      <h2>{pending ? "Cuando vayas, contanos qué pediste" : "Lo que pedimos"}</h2>
+      <h2>
+        {pending ? "Cuando vayas, contanos qué pediste" : "Lo que pedimos"}
+      </h2>
       {!!visitDates.length && (
         <div className="item-date-pager" aria-label="Navegar visitas por fecha">
-          <button type="button" className="date-chevron" aria-label="Ver visita más reciente" disabled={selectedDateIndex <= 0} onClick={() => setSelectedVisitDate(visitDates[selectedDateIndex - 1])}>‹</button>
-          <label>Visita #{visitNumber}
-            <select value={selectedVisitDate} onChange={(event) => setSelectedVisitDate(event.target.value)}>
-              {visitDates.map((date, index) => <option key={date} value={date}>Visita #{visitDates.length - index} · {visitDateLabel(date)}</option>)}
+          <button
+            type="button"
+            className="date-chevron"
+            aria-label="Ver visita más reciente"
+            disabled={selectedDateIndex <= 0}
+            onClick={() =>
+              setSelectedVisitDate(visitDates[selectedDateIndex - 1])
+            }
+          >
+            ‹
+          </button>
+          <label>
+            Visita #{visitNumber}
+            <select
+              value={selectedVisitDate}
+              onChange={(event) => setSelectedVisitDate(event.target.value)}
+            >
+              {visitDates.map((date, index) => (
+                <option key={date} value={date}>
+                  Visita #{visitDates.length - index} · {visitDateLabel(date)}
+                </option>
+              ))}
             </select>
           </label>
-          <button type="button" className="date-chevron" aria-label="Ver visita anterior" disabled={selectedDateIndex < 0 || selectedDateIndex >= visitDates.length - 1} onClick={() => setSelectedVisitDate(visitDates[selectedDateIndex + 1])}>›</button>
+          <button
+            type="button"
+            className="date-chevron"
+            aria-label="Ver visita anterior"
+            disabled={
+              selectedDateIndex < 0 ||
+              selectedDateIndex >= visitDates.length - 1
+            }
+            onClick={() =>
+              setSelectedVisitDate(visitDates[selectedDateIndex + 1])
+            }
+          >
+            ›
+          </button>
         </div>
       )}
-      {items.isError && <p className="form-error">No pudimos cargar los ítems todavía. Podés seguir usando el detalle e intentarlo de nuevo.</p>}
+      {items.isError && (
+        <p className="form-error">
+          No pudimos cargar los ítems todavía. Podés seguir usando el detalle e
+          intentarlo de nuevo.
+        </p>
+      )}
       <div className="author-item-groups">
         {itemsByAuthor.map(([author, authorItems]) => (
           <section key={author}>
             <h3>{author === username ? "Tus ítems" : `Ítems de ${author}`}</h3>
-            <div className="item-list">{authorItems.map((item) => <ItemCard key={item.id} item={item} canEdit={item.author === username} onEdit={setEditingItem} />)}</div>
+            <div className="item-list">
+              {authorItems.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  canEdit={item.author === username}
+                  onEdit={setEditingItem}
+                />
+              ))}
+            </div>
           </section>
         ))}
-        {!items.isLoading && !itemList.length && !!selectedVisitDate && <p className="empty-state">No hay ítems cargados para esta visita.</p>}
+        {!items.isLoading && !itemList.length && !!selectedVisitDate && (
+          <p className="empty-state">No hay ítems cargados para esta visita.</p>
+        )}
       </div>
-      {editingItem !== undefined && <ItemForm placeId={id} item={editingItem ?? undefined} onClose={() => { setEditingItem(undefined); setSelectedVisitDate(""); }} />}
-      {editingPlace && <PlaceForm place={venue} onClose={() => setEditingPlace(false)} />}
+      {editingItem !== undefined && (
+        <ItemForm
+          placeId={id}
+          item={editingItem ?? undefined}
+          onClose={() => {
+            setEditingItem(undefined);
+            setSelectedVisitDate("");
+          }}
+        />
+      )}
+      {editingPlace && (
+        <PlaceForm place={venue} onClose={() => setEditingPlace(false)} />
+      )}
     </section>
   );
 }

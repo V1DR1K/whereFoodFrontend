@@ -156,7 +156,7 @@ export function HomeRecipesPage() {
           <p className="eyebrow">HOWCOOK · RECETAS CON CARIÑO</p>
           <h1>
             ¿Qué vamos a
-            <em>cocinar?</em>?
+            <em> cocinar</em> hoy?
           </h1>
           <p>
             Las comidas de todos los días, guardadas para repetir las que
