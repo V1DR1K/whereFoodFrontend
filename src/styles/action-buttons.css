@@ -3,12 +3,11 @@
 }
 
 .add-cook-button {
-  transition: transform .2s, border-color .2s, background .2s, box-shadow .2s;
+  transition: transform .2s, box-shadow .2s;
 }
 
 .add-cook-button:hover,
 .add-cook-button:focus-visible {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 #394321;
-  border-color: var(--lime);
 }
