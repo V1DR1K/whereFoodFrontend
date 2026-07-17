@@ -1,1 +1,1 @@
-export function LoadMore({enabled,onClick,loading}:{enabled:boolean;onClick:()=>void;loading:boolean}){return enabled?<button className="secondary-button load-more" onClick={onClick} disabled={loading}>{loading?'Cargando…':'Ver más lugares'}</button>:null}
+export function LoadMore({enabled,onClick,loading,label='Ver más lugares'}:{enabled:boolean;onClick:()=>void;loading:boolean;label?:string}){return enabled?<button className="secondary-button load-more" onClick={onClick} disabled={loading}>{loading?'Cargando…':label}</button>:null}

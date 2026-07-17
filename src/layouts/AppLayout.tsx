@@ -10,14 +10,15 @@ export function AppLayout() {
   const inFood = location.pathname.startsWith('/food');
   const inFilms = location.pathname.startsWith('/films');
   const inCook = location.pathname.startsWith('/how-cook');
-  const settingsLink = inFood ? '/food/categories' : '/films/platforms';
+  const inFun = location.pathname.startsWith('/why-fun');
+  const settingsLink = inFood ? '/food/categories' : inFilms ? '/films/platforms' : '/why-fun/categories';
 
-  return <main className={`app-shell ${inFilms ? 'film-shell' : ''} ${inCook ? 'cook-shell' : ''}`}>
+  return <main className={`app-shell ${inFilms ? 'film-shell' : ''} ${inCook ? 'cook-shell' : ''} ${inFun ? 'fun-shell' : ''}`}>
     <header className="app-header">
       <Link className="brand" to="/" aria-label="WhatPlan, ir al selector">What<span>Plan</span><i>✦</i></Link>
       <div className="header-actions">
-        {(inFood || inFilms || inCook) && <Link className="round" to="/" aria-label="Cambiar de aplicación" title="Cambiar de aplicación">⌂</Link>}
-        {canManage && (inFood || inFilms) && <Link className="round" to={settingsLink} aria-label="Configuración" title="Configuración">⚙</Link>}
+        {(inFood || inFilms || inCook || inFun) && <Link className="round" to="/" aria-label="Cambiar de aplicación" title="Cambiar de aplicación">⌂</Link>}
+        {canManage && (inFood || inFilms || inFun) && <Link className="round" to={settingsLink} aria-label="Configuración" title="Configuración">⚙</Link>}
         <button className="avatar" aria-label={`Cerrar sesión de ${user?.username ?? 'usuario'}`} title="Cerrar sesión" onClick={() => { logout(); navigate('/login'); }}>{user?.username[0].toUpperCase()}</button>
       </div>
     </header>
