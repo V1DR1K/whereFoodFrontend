@@ -898,6 +898,9 @@ a {
 .module-card h2 { z-index: 1; margin: 12px 0 3px; font: 600 clamp(34px, 5vw, 54px)/.9 "Fraunces"; letter-spacing: -2px; }
 .module-card h2 span { color: var(--coral); }
 .module-card--films h2 span { color: #c1b7ff; }
+.module-card--cook { background: radial-gradient(circle at 90% 12%, #4e6a35 0 4%, transparent 27%), linear-gradient(135deg, #283322, #1b2119 68%); box-shadow: 7px 7px 0 #4a6134; }
+.module-card--cook:hover, .module-card--cook:focus-visible { border-color: var(--lime); box-shadow: 10px 12px 0 #4a6134; }
+.module-card--cook h2 span { color: var(--lime); }
 .module-card small { z-index: 1; align-self: end; color: #dfdadd; font-size: 14px; }
 .module-card b { z-index: 1; margin-top: 13px; color: var(--lime); font-size: 13px; }
 .module-card__emoji { position: absolute; top: 30px; right: 25px; font-size: 61px; transform: rotate(8deg); animation: floaty 4.8s ease-in-out infinite; }

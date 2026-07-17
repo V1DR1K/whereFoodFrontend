@@ -6,7 +6,14 @@ import type { Film } from '../../types/domain';
 import { filmReviewMetrics } from './reviewMetrics';
 
 const sharedReviewers = new Set(['tomas', 'avril']);
-const sharedReviews = (film: Film) => film.reviews.filter(review => sharedReviewers.has(review.author.toLowerCase()));
+const sharedReviews = (film: Film) => {
+ const latestByAuthor = new Map<string, Film['reviews'][number]>();
+ for (const review of film.reviews) {
+  const author = review.author.toLowerCase();
+  if (sharedReviewers.has(author) && !latestByAuthor.has(author)) latestByAuthor.set(author, review);
+ }
+ return [...latestByAuthor.values()];
+};
 const average = (values: number[]) => values.length ? values.reduce((total, value) => total + value, 0) / values.length : undefined;
 const watchedLabel = (date?: string) => date ? `VISTA ${date.split('-').reverse().join('/')}` : 'PARA VER';
 
