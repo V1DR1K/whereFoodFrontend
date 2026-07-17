@@ -116,7 +116,7 @@ export function PlaceDetailPage() {
       {!pending && (
         <section className="watch-counter" aria-label="Contador de visitas">
           <div><p className="eyebrow">CONTADOR COMPARTIDO</p><h2>{visitDates.length === 0 ? "Todavía no fueron" : `${visitDates.length} ${visitDates.length === 1 ? "vez" : "veces"}`}</h2><p>Última visita: {visitDates[0] ? visitDateLabel(visitDates[0]) : "pendiente"}</p></div>
-          <div><button className="counter-add" onClick={() => setEditingItem(null)}>Fuimos de nuevo 🍽️</button></div>
+          <div><button className="counter-add food-counter-add" onClick={() => setEditingItem(null)}>Fuimos de nuevo 🍽️</button></div>
         </section>
       )}
       {!pending && (
