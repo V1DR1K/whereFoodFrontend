@@ -1,23 +1,35 @@
 import { api } from "../../lib/api";
-import type { Item, Slice } from "../../types/domain";
-export type ItemInput = {
-  name: string;
+import type { Item, ItemReview, PlaceVisit, PlaceVisitSummary } from "../../types/domain";
+export type ItemReviewInput = {
   comment?: string;
   taste: number;
   price: number;
-  visitDate: string;
 };
-export const getItems = (placeId: number, visitDate?: string) =>
-  api<Slice<Item>>(
-    `/items?placeId=${placeId}${visitDate ? `&visitDate=${visitDate}` : ""}`,
-  );
-export const getItemDates = (placeId: number) =>
-  api<string[]>(`/places/${placeId}/item-dates`);
-export const saveItem = (placeId: number, input: ItemInput, id?: number) =>
-  api<Item>(id ? `/items/${id}` : `/places/${placeId}/items`, {
-    method: id ? "PUT" : "POST",
+export type CreateItemInput = {
+  name: string;
+  review: ItemReviewInput;
+};
+export const getVisits = (placeId: number) => api<PlaceVisitSummary[]>(`/places/${placeId}/visits`);
+export const getVisit = (visitId: number) => api<PlaceVisit>(`/place-visits/${visitId}`);
+export const createVisit = (placeId: number, visitedOn: string) =>
+  api<PlaceVisitSummary>(`/places/${placeId}/visits`, {
+    method: "POST",
+    body: JSON.stringify({ visitedOn }),
+  });
+export const updateVisit = (visitId: number, visitedOn: string) =>
+  api<PlaceVisitSummary>(`/place-visits/${visitId}`, {
+    method: "PUT",
+    body: JSON.stringify({ visitedOn }),
+  });
+export const createItem = (visitId: number, input: CreateItemInput) =>
+  api<Item>(`/place-visits/${visitId}/items`, {
+    method: "POST",
     body: JSON.stringify(input),
   });
+export const renameItem = (id: number, name: string) =>
+  api<Item>(`/items/${id}`, { method: "PUT", body: JSON.stringify({ name }) });
+export const saveItemReview = (id: number, input: ItemReviewInput) =>
+  api<ItemReview>(`/items/${id}/reviews/me`, { method: "PUT", body: JSON.stringify(input) });
 export const uploadPhoto = (id: number, file: File) => {
   const data = new FormData();
   data.append("file", file);
