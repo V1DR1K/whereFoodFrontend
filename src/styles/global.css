@@ -1111,10 +1111,10 @@ a {
 .fun-card__body footer { grid-column:1/-1; display:flex; justify-content:space-between; gap:8px; align-self:end; border-top:1px solid var(--line); padding-top:10px; color:var(--muted); font-size:10px; }
 .fun-card__body footer span:last-child { color:#ff9cd4; }
 .fun-detail { padding-top:26px; }
-.fun-detail__head { display:grid; gap:20px; margin:0 0 32px; }
+.fun-detail__head { display:flex; flex-direction:column; align-items:stretch; gap:20px; margin:0 0 32px; }
 .fun-detail__cover { width:100%; height:clamp(260px,42vw,480px); margin:24px 0; overflow:hidden; display:grid; place-items:center; border:1px solid #5c3d5b; border-radius:18px; background:linear-gradient(135deg,#513153,#271d31); box-shadow:6px 6px 0 #3b263e; font-size:96px; }
 .fun-detail__cover img { width:100%; height:100%; object-fit:cover; }
-.fun-detail__summary { min-width:0; }
+.fun-detail__summary { width:100%; min-width:0; }
 .fun-detail__head h1 { margin:0 0 16px; font:600 clamp(38px,5vw,62px)/.95 "Fraunces"; letter-spacing:-2px; }
 .fun-detail__meta { display:grid; gap:8px; width:100%; }
 .fun-detail__meta .eyebrow,.fun-detail__meta .address-link,.fun-detail__meta .fun-detail-rating { margin:0; }
