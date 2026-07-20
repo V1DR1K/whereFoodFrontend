@@ -38,10 +38,10 @@ export function FunVenueDetailPage() {
 
   return <section className="fun-detail">
     <Link to="/why-fun">← Volver a WhyFun</Link>
+    <div className="fun-detail__cover">
+      {venue.coverPhoto ? <img src={mediaUrl(venue.coverPhoto.url)} alt={`Foto de ${venue.name}`} /> : <span>{venue.subcategory.icon}</span>}
+    </div>
     <div className="fun-detail__head">
-      <div className="fun-detail__cover">
-        {venue.coverPhoto ? <img src={mediaUrl(venue.coverPhoto.url)} alt={`Foto de ${venue.name}`} /> : <span>{venue.subcategory.icon}</span>}
-      </div>
       <div>
         <p className="eyebrow">{venue.category.icon} {venue.category.name} · {venue.subcategory.icon} {venue.subcategory.name}</p>
         <h1>{venue.name}</h1>
