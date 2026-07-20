@@ -9,6 +9,16 @@ import { getAllFunCategories, saveFunReview, saveFunVenue, uploadFunPhoto } from
 const days: { value: FunWeekday; label: string }[] = [
   { value: 'MONDAY', label: 'Lunes' }, { value: 'TUESDAY', label: 'Martes' }, { value: 'WEDNESDAY', label: 'Miércoles' }, { value: 'THURSDAY', label: 'Jueves' }, { value: 'FRIDAY', label: 'Viernes' }, { value: 'SATURDAY', label: 'Sábado' }, { value: 'SUNDAY', label: 'Domingo' },
 ];
+const seconds = (time: string) => {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 3_600 + minutes * 60;
+};
+const closesAfter = (schedule: FunSchedule) => {
+  const opensAt = seconds(schedule.opensAt);
+  const closesAt = seconds(schedule.closesAt);
+  return closesAt > opensAt ? closesAt : closesAt + 86_400;
+};
+const schedulesOverlap = (first: FunSchedule, second: FunSchedule) => seconds(first.opensAt) < closesAfter(second) && seconds(second.opensAt) < closesAfter(first);
 
 export function FunVenueForm({ venue, reviewOnly = false, onClose }: { venue?: FunVenue; reviewOnly?: boolean; onClose: () => void }) {
   const qc = useQueryClient();
@@ -33,8 +43,8 @@ export function FunVenueForm({ venue, reviewOnly = false, onClose }: { venue?: F
       }
       if (!canEditDetails || !categoryId || !subcategoryId) throw new Error('Elegí una categoría y una subcategoría');
       if (!schedules.length) throw new Error('Agregá al menos un horario de apertura');
-      if (schedules.some(schedule => schedule.opensAt >= schedule.closesAt)) throw new Error('Cada horario debe cerrar después de abrir');
-      const duplicateOrOverlap = schedules.some((schedule, index) => schedules.some((other, otherIndex) => schedule.day === other.day && index !== otherIndex && schedule.opensAt < other.closesAt && other.opensAt < schedule.closesAt));
+      if (schedules.some(schedule => schedule.opensAt === schedule.closesAt)) throw new Error('Cada horario debe tener horas de apertura y cierre distintas');
+      const duplicateOrOverlap = schedules.some((schedule, index) => schedules.some((other, otherIndex) => schedule.day === other.day && index !== otherIndex && schedulesOverlap(schedule, other)));
       if (duplicateOrOverlap) throw new Error('Los horarios de un mismo día no pueden superponerse');
       if ((venue?.photos.length ?? 0) + files.length > 12) throw new Error('Cada lugar admite hasta 12 fotos');
       const input = { name: details.name.trim(), address: details.address.trim(), categoryId, subcategoryId, schedules };
