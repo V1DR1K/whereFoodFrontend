@@ -9,8 +9,8 @@ const sharedReviewers = new Set(['tomas', 'avril']);
 const sharedReviews = (film: Film) => {
  const latestByAuthor = new Map<string, Film['reviews'][number]>();
  for (const review of film.reviews) {
-  const author = review.author.toLowerCase();
-  if (sharedReviewers.has(author) && !latestByAuthor.has(author)) latestByAuthor.set(author, review);
+  const author = review.author?.toLowerCase();
+  if (author && sharedReviewers.has(author) && !latestByAuthor.has(author)) latestByAuthor.set(author, review);
  }
  return [...latestByAuthor.values()];
 };
