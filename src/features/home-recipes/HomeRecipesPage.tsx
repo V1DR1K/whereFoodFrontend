@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { mediaUrl, session } from "../../lib/api";
+import { mediaUrl } from "../../lib/api";
 import type { Home, HomeRecipe } from "../../types/domain";
 import { HomeRecipeForm } from "./HomeRecipeForm";
 import { getHomeRecipes } from "./homeRecipes";
@@ -84,7 +84,6 @@ function RecipeCard({
   onEdit: (recipe: HomeRecipe) => void;
   onRepeat: (recipe: HomeRecipe) => void;
 }) {
-  const own = recipe.author === session.get()?.username;
   const image = recipe.photoUrl ?? recipe.thumbnailUrl;
   return (
     <article className="home-recipe-card">
@@ -101,16 +100,14 @@ function RecipeCard({
             </p>
             <h3>{recipe.name}</h3>
           </div>
-          {own && (
-            <button
-              className="icon-edit"
-              type="button"
-              onClick={() => onEdit(recipe)}
-              aria-label={`Editar ${recipe.name}`}
-            >
-              ✎
-            </button>
-          )}
+          <button
+            className="icon-edit"
+            type="button"
+            onClick={() => onEdit(recipe)}
+            aria-label={`Editar ${recipe.name}`}
+          >
+            ✎
+          </button>
         </div>
         <div className="ingredient-pills">
           {recipe.ingredients.map((ingredient, index) => (
@@ -129,6 +126,9 @@ function RecipeCard({
             ↗ Ver receta
           </a>
         )}
+        <Link className="recipe-detail-link" to={`/how-cook/${recipe.id}`}>
+          Ver detalle →
+        </Link>
         <div className="recipe-card-actions">
           <small>Preparó {recipe.author}</small>
           <button

@@ -12,6 +12,7 @@ const WhichFilmPage = lazy(() => import('../features/films/WhichFilmPage').then(
 const FilmDetailPage = lazy(() => import('../features/films/FilmDetailPage').then(({ FilmDetailPage }) => ({ default: FilmDetailPage })));
 const PlatformManager = lazy(() => import('../features/films/PlatformManager').then(({ PlatformManager }) => ({ default: PlatformManager })));
 const HomeRecipesPage = lazy(() => import('../features/home-recipes/HomeRecipesPage').then(({ HomeRecipesPage }) => ({ default: HomeRecipesPage })));
+const HomeRecipeDetailPage = lazy(() => import('../features/home-recipes/HomeRecipeDetailPage').then(({ HomeRecipeDetailPage }) => ({ default: HomeRecipeDetailPage })));
 const WhyFunPage = lazy(() => import('../features/why-fun/WhyFunPage').then(({ WhyFunPage }) => ({ default: WhyFunPage })));
 const FunVenueDetailPage = lazy(() => import('../features/why-fun/FunVenueDetailPage').then(({ FunVenueDetailPage }) => ({ default: FunVenueDetailPage })));
 const FunCatalogManager = lazy(() => import('../features/why-fun/FunCatalogManager').then(({ FunCatalogManager }) => ({ default: FunCatalogManager })));
@@ -58,6 +59,7 @@ export function AppRoutes() {
       <Route path="films/:id" element={<Suspense fallback={<LoadingPage />}><FilmDetailPage /></Suspense>} />
       <Route path="films/platforms" element={<PlatformAdmin />} />
       <Route path="how-cook" element={<Suspense fallback={<LoadingPage />}><HomeRecipesPage /></Suspense>} />
+      <Route path="how-cook/:id" element={<Suspense fallback={<LoadingPage />}><HomeRecipeDetailPage /></Suspense>} />
       <Route path="why-fun" element={<Suspense fallback={<LoadingPage />}><WhyFunPage /></Suspense>} />
       <Route path="why-fun/:id" element={<Suspense fallback={<LoadingPage />}><FunVenueDetailPage /></Suspense>} />
       <Route path="why-fun/categories" element={<FunAdmin />} />
