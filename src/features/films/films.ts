@@ -1,7 +1,7 @@
 import { api } from '../../lib/api';
-import type { Film, FilmGenreOption, FilmReview, TmdbMovie, WatchPlatform } from '../../types/domain';
+import type { Film, FilmGenreOption, FilmReview, FilmView, TmdbMovie, WatchPlatform } from '../../types/domain';
 
-export type FilmInput = { tmdbId?: number; title?: string; originalTitle?: string; synopsis?: string; releaseDate?: string; posterPath?: string; watchedOn?: string; genres: string[]; platformId?: number };
+export type FilmInput = { tmdbId?: number; title?: string; originalTitle?: string; synopsis?: string; releaseDate?: string; posterPath?: string; genres: string[]; platformId?: number };
 export type PlatformInput = { name: string; icon: string; active: boolean };
 export const getFilms = (filters: { genre?: string; platformId?: number; watched?: boolean } = {}) => {
   const query = new URLSearchParams();
@@ -15,8 +15,9 @@ export const searchTmdbMovies = (query: string) => api<TmdbMovie[]>(`/tmdb/movie
 export const saveFilm = (input: FilmInput, id?: number) => api<Film>(`/films${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });
 export const uploadFilmPhoto = (id: number, file: File) => { const data = new FormData(); data.append('file', file); return api<Film>(`/films/${id}/photo`, { method: 'POST', body: data }); };
 export const deleteFilm = (id: number) => api<void>(`/films/${id}`, { method: 'DELETE' });
-export const saveFilmReview = (id: number, input: Pick<FilmReview, 'rating' | 'comment' | 'watchedOn' | 'metrics'>) => api<FilmReview>(`/films/${id}/reviews`, { method: 'POST', body: JSON.stringify(input) });
-export const updateFilmReview = (filmId: number, reviewId: number, input: Pick<FilmReview, 'rating' | 'comment' | 'watchedOn' | 'metrics'>) => api<FilmReview>(`/films/${filmId}/reviews/${reviewId}`, { method: 'PUT', body: JSON.stringify(input) });
+export const addFilmView = (id: number, watchedOn: string) => api<FilmView>(`/films/${id}/views`, { method: 'POST', body: JSON.stringify({ watchedOn }) });
+export const saveFilmReview = (filmId: number, viewId: number, input: Pick<FilmReview, 'rating' | 'comment' | 'metrics'>) => api<FilmReview>(`/films/${filmId}/views/${viewId}/reviews`, { method: 'POST', body: JSON.stringify(input) });
+export const updateFilmReview = (filmId: number, reviewId: number, input: Pick<FilmReview, 'rating' | 'comment' | 'metrics'>) => api<FilmReview>(`/films/${filmId}/reviews/${reviewId}`, { method: 'PUT', body: JSON.stringify(input) });
 export const getPlatforms = () => api<WatchPlatform[]>('/watch-platforms');
 export const getAllPlatforms = () => api<WatchPlatform[]>('/watch-platforms/all');
 export const savePlatform = (input: PlatformInput, id?: number) => api<WatchPlatform>(`/watch-platforms${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });

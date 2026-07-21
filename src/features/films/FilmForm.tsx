@@ -9,7 +9,6 @@ import { mediaUrl } from '../../lib/api';
 const manualInput = (form: FormData, synopsis: string | undefined, genres: string[]): FilmInput => ({
   title: String(form.get('title')).trim(),
   synopsis,
-  watchedOn: form.get('watchedOn') ? String(form.get('watchedOn')) : undefined,
   platformId: form.get('platformId') ? Number(form.get('platformId')) : undefined,
   genres,
 });
@@ -37,7 +36,7 @@ export function FilmForm({ onClose, film }: { onClose: () => void; film?: Film }
   const save = useMutation({
     mutationFn: async (data: FormData) => {
       const input = isTmdbFilm
-        ? { tmdbId: importedTmdbId, watchedOn: data.get('watchedOn') ? String(data.get('watchedOn')) : undefined, platformId: data.get('platformId') ? Number(data.get('platformId')) : undefined, genres: [] }
+        ? { tmdbId: importedTmdbId, platformId: data.get('platformId') ? Number(data.get('platformId')) : undefined, genres: [] }
         : manualInput(data, film?.synopsis, genres);
       const saved = await saveFilm(input, film?.id);
       return file && !isTmdbFilm ? uploadFilmPhoto(saved.id, file) : saved;
@@ -48,7 +47,7 @@ export function FilmForm({ onClose, film }: { onClose: () => void; film?: Film }
   const visibleOptions = genreOptions.data ?? [];
   const toggleGenre = (name: string) => setGenres(current => current.includes(name) ? current.filter(value => value !== name) : [...current, name]);
 
-  if (created) return <ReviewPrompt name={created.tmdb?.title ?? created.title} reviewTo={`/films/${created.id}`} onClose={onClose} />;
+  if (created) return <ReviewPrompt name={created.tmdb?.title ?? created.title} reviewTo={`/films/${created.id}`} onClose={onClose} actionLabel="Registrar una vista" message="¿Ya la vieron? Primero registren la vista y después cada uno puede dejar su reseña." />;
   return <Modal onClose={onClose}><form className="film-form" onSubmit={event => { event.preventDefault(); save.mutate(new FormData(event.currentTarget)); }}>
     <p className="eyebrow">{film ? 'EDITAR PELÍCULA' : 'NUEVA PELÍCULA'}</p>
     <h2>{film ? 'Afinemos la ficha' : 'Elijan la próxima función'}</h2>
@@ -70,6 +69,6 @@ export function FilmForm({ onClose, film }: { onClose: () => void; film?: Film }
       <small className="tiny">{file ? `Se cargará ${file.name}.` : film?.posterUrl ? 'La imagen actual se conservará si no elegís otra.' : 'Podés subir una imagen; se adapta automáticamente a los mosaicos.'}</small>
       <fieldset className="tag-picker film-genre-picker"><legend>Géneros</legend><p>Elegí todos los que correspondan. El catálogo se administra desde Configuración.</p><div className="tag-options">{visibleOptions.map(option => <label className="tag-option" key={option.id}><input type="checkbox" checked={genres.includes(option.name)} onChange={() => toggleGenre(option.name)} /><span>{option.emoji} {option.name}</span></label>)}</div></fieldset>
     </>}
-    {isTmdbFilm || manualMode || film ? <><div className="form-columns">{film && <label>Fecha vista<input name="watchedOn" type="date" defaultValue={film.lastWatchedOn ?? new Date().toLocaleDateString('sv-SE')} required /></label>}<label>Plataforma<select name="platformId" defaultValue={film?.platform?.id ?? ''}><option value="">Todavía no sabemos</option>{availablePlatforms.map(platform => <option key={platform.id} value={platform.id}>{platform.icon} {platform.name}{!platform.active ? ' (inactiva)' : ''}</option>)}</select></label></div><button className="main-button" disabled={save.isPending}>{save.isPending ? 'Guardando…' : film ? 'Guardar película' : 'Guardar en WhichFilm'} ✦</button>{save.error && <p className="form-error">{save.error.message}</p>}</> : null}
+    {isTmdbFilm || manualMode || film ? <><div className="form-columns"><label>Plataforma<select name="platformId" defaultValue={film?.platform?.id ?? ''}><option value="">Todavía no sabemos</option>{availablePlatforms.map(platform => <option key={platform.id} value={platform.id}>{platform.icon} {platform.name}{!platform.active ? ' (inactiva)' : ''}</option>)}</select></label></div><button className="main-button" disabled={save.isPending}>{save.isPending ? 'Guardando…' : film ? 'Guardar película' : 'Guardar en WhichFilm'} ✦</button>{save.error && <p className="form-error">{save.error.message}</p>}</> : null}
   </form></Modal>;
 }

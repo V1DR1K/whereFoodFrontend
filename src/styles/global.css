@@ -973,6 +973,9 @@ a {
 .counter-add { width:100%; padding:0 14px; background:#b8adff; color:#291f43; }
 .counter-button:hover:not(:disabled),.counter-add:hover:not(:disabled) { transform:translateY(-1px); }
 .film-review-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; margin-top:10px; }
+.film-review-add { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:14px; padding:14px; border:1px dashed #5f5687; border-radius:13px; background:#24212f; }
+.film-review-add p { margin:0; color:var(--muted); font-size:13px; line-height:1.4; }
+@media (max-width:540px) { .film-review-add { align-items:stretch; flex-direction:column; } }
 .film-review-card { min-height:185px; padding:17px; border:1px solid var(--line); border-radius:15px; background:var(--panel); }
 .film-review-card>div { display:flex; align-items:center; gap:9px; }
 .review-avatar { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:#695b9b; color:#fff; font-weight:800; }

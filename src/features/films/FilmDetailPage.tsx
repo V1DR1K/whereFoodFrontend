@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { SegmentedLevel } from '../../components/ui/SegmentedLevel';
 import { StarRating } from '../../components/ui/StarRating';
 import { mediaUrl, session } from '../../lib/api';
-import type { FilmReview } from '../../types/domain';
+import type { FilmReview, FilmView } from '../../types/domain';
 import { FilmForm } from './FilmForm';
 import { FilmReviewForm } from './FilmReviewForm';
+import { FilmViewForm } from './FilmViewForm';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { deleteFilm, getFilm } from './films';
 import { filmReviewMetrics, metricLevel } from './reviewMetrics';
@@ -19,28 +20,31 @@ export function FilmDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [reviewing, setReviewing] = useState(false);
-  const [editingReview, setEditingReview] = useState<FilmReview>();
+  const [addingView, setAddingView] = useState(false);
+  const [reviewing, setReviewing] = useState<{ view: FilmView; review?: FilmReview }>();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [selectedReviewDate, setSelectedReviewDate] = useState('');
+  const [selectedViewId, setSelectedViewId] = useState<number>();
   const filmQuery = useQuery({ queryKey: ['film', id], queryFn: () => getFilm(id), enabled: validId });
-  const reviewDates = [...new Set((filmQuery.data?.reviews ?? []).map(review => review.watchedOn).filter((date): date is string => Boolean(date)))];
-  useEffect(() => { if (reviewDates.length && !reviewDates.includes(selectedReviewDate)) setSelectedReviewDate(reviewDates[0]); }, [reviewDates, selectedReviewDate]);
   const remove = useMutation({ mutationFn: () => deleteFilm(id), onSuccess: async () => { await qc.invalidateQueries({ queryKey: ['films'] }); navigate('/films'); } });
+  const views = filmQuery.data?.views ?? [];
+  useEffect(() => { if (views.length && !views.some(view => view.id === selectedViewId)) setSelectedViewId(views[0].id); }, [selectedViewId, views]);
 
   if (!validId || filmQuery.isError || (!filmQuery.isLoading && !filmQuery.data)) return <p className="form-error">No pudimos abrir esa película. Volvé a la sala e intentá otra vez.</p>;
   if (filmQuery.isLoading) return <p>Cargando película…</p>;
 
   const film = filmQuery.data!;
+  const selectedView = views.find(view => view.id === selectedViewId);
+  const selectedViewIndex = views.findIndex(view => view.id === selectedViewId);
+  const visitNumber = selectedViewIndex < 0 ? 0 : views.length - selectedViewIndex;
+  const username = session.get()?.username;
+  const ownReview = selectedView?.reviews.find(review => review.author === username);
   const tmdb = film.tmdb;
   const title = tmdb?.title ?? film.title;
   const posterUrl = tmdb?.posterUrl ?? film.posterUrl;
   const genres = tmdb?.genres.length ? tmdb.genres : film.genres;
   const synopsis = tmdb?.synopsis ?? film.synopsis;
   const releaseDate = tmdb?.releaseDate ?? film.releaseDate;
-  const selectedReviewIndex = reviewDates.indexOf(selectedReviewDate);
-  const reviewsForDate = film.reviews.filter(review => review.watchedOn === selectedReviewDate);
-  const visitNumber = reviewDates.length - selectedReviewIndex;
+  const viewAction = film.watchedCount ? 'La vimos de nuevo 🍿' : 'La vimos por primera vez 🍿';
 
   return <section className="film-detail">
     <Link to="/films">← Volver a WhichFilm</Link>
@@ -55,7 +59,7 @@ export function FilmDetailPage() {
       </div>
       <div className="detail-actions">
         <button className="secondary-button" onClick={() => setEditing(true)}>✎ Editar ficha</button>
-        <button className="main-button" onClick={() => setReviewing(true)}>La vimos de nuevo 🍿</button>
+        <button className="main-button" onClick={() => setAddingView(true)}>{viewAction}</button>
         <button className="text-button" disabled={remove.isPending} onClick={() => setConfirmingDelete(true)}>{remove.isPending ? 'Borrando…' : 'Borrar película'}</button>
       </div>
     </div>
@@ -72,21 +76,25 @@ export function FilmDetailPage() {
     </section>}
     <section className="watch-counter" aria-label="Contador de veces vistas">
       <div><p className="eyebrow">CONTADOR COMPARTIDO</p><h2>{film.watchedCount === 0 ? 'Todavía no la vieron' : `${film.watchedCount} ${film.watchedCount === 1 ? 'vez' : 'veces'}`}</h2><p>Última vista: {viewedLabel(film.lastWatchedOn)}</p></div>
-      <div><button className="counter-add" onClick={() => setReviewing(true)}>La vimos de nuevo 🍿</button></div>
+      <div><button className="counter-add" onClick={() => setAddingView(true)}>{viewAction}</button></div>
     </section>
     <section className="reviews-section">
       <div className="section-title"><div><p className="eyebrow">HISTORIAL DE VISTAS</p><h2>Reseñas</h2></div><strong>{film.reviews.length}</strong></div>
-      {!!reviewDates.length && <div className="item-date-pager" aria-label="Navegar reseñas por fecha"><button type="button" className="date-chevron" aria-label="Ver vista más reciente" disabled={selectedReviewIndex <= 0} onClick={() => setSelectedReviewDate(reviewDates[selectedReviewIndex - 1])}>‹</button><label>Vista #{visitNumber}<select value={selectedReviewDate} onChange={event => setSelectedReviewDate(event.target.value)}>{reviewDates.map((date, index) => <option key={date} value={date}>Vista #{reviewDates.length - index} · {viewedLabel(date)}</option>)}</select></label><button type="button" className="date-chevron" aria-label="Ver vista anterior" disabled={selectedReviewIndex < 0 || selectedReviewIndex >= reviewDates.length - 1} onClick={() => setSelectedReviewDate(reviewDates[selectedReviewIndex + 1])}>›</button></div>}
-      <div className="film-review-columns">{reviewsForDate.map(review => <ReviewCard key={review.id} review={review} visitNumber={visitNumber} own={review.author === session.get()?.username} onEdit={() => setEditingReview(review)} />)}</div>
-      {!film.reviews.length && <p className="empty-state">Todavía no hay reseñas. Registren la primera vista.</p>}
+      {!!views.length && <div className="item-date-pager" aria-label="Navegar reseñas por vista"><button type="button" className="date-chevron" aria-label="Ver vista más reciente" disabled={selectedViewIndex <= 0} onClick={() => setSelectedViewId(views[selectedViewIndex - 1].id)}>‹</button><label>Vista #{visitNumber}<select value={selectedViewId ?? ''} onChange={event => setSelectedViewId(Number(event.target.value))}>{views.map((view, index) => <option key={view.id} value={view.id}>Vista #{views.length - index} · {viewedLabel(view.watchedOn)}</option>)}</select></label><button type="button" className="date-chevron" aria-label="Ver vista anterior" disabled={selectedViewIndex < 0 || selectedViewIndex >= views.length - 1} onClick={() => setSelectedViewId(views[selectedViewIndex + 1].id)}>›</button></div>}
+      {selectedView && <>
+        <div className="film-review-columns">{selectedView.reviews.map(review => <ReviewCard key={review.id} review={review} visitNumber={visitNumber} onEdit={() => setReviewing({ view: selectedView, review })} />)}</div>
+        {!ownReview && <div className="film-review-add"><p>Esta vista ya está registrada. Ahora podés sumar tu reseña sin crear otra función.</p><button className="secondary-button" onClick={() => setReviewing({ view: selectedView })}>Escribir mi reseña</button></div>}
+      </>}
+      {!views.length && <p className="empty-state">Todavía no hay vistas. Registren la primera.</p>}
     </section>
     {editing && <FilmForm film={film} onClose={() => setEditing(false)} />}
-    {reviewing && <FilmReviewForm film={film} onClose={() => setReviewing(false)} />}
-    {editingReview && <FilmReviewForm film={film} review={editingReview} onClose={() => setEditingReview(undefined)} />}
-    {confirmingDelete && <ConfirmDialog title="¿Borrar esta película?" message="Se eliminará de la lista junto con sus reseñas." confirmLabel="Borrar película" pending={remove.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => remove.mutate()} />}
+    {addingView && <FilmViewForm film={film} onClose={() => setAddingView(false)} onCreated={view => { setAddingView(false); setSelectedViewId(view.id); setReviewing({ view }); }} />}
+    {reviewing && <FilmReviewForm film={film} view={reviewing.view} review={reviewing.review} onClose={() => setReviewing(undefined)} />}
+    {confirmingDelete && <ConfirmDialog title="¿Borrar esta película?" message="Se eliminará de la lista junto con sus vistas y reseñas." confirmLabel="Borrar película" pending={remove.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => remove.mutate()} />}
   </section>;
 }
 
-function ReviewCard({ review, visitNumber, own, onEdit }: { review: FilmReview; visitNumber: number; own: boolean; onEdit: () => void }) {
-  return <article className="film-review-card"><div><span className="review-avatar">{review.author[0].toUpperCase()}</span><h3>{review.author === 'tomas' ? 'Tomás' : 'Avril'}</h3>{own && <button className="icon-edit" type="button" aria-label="Editar reseña" onClick={onEdit}>✎</button>}</div><StarRating label={`Puntuación de ${review.author}`} value={review.rating} /><div className="film-review-metrics">{filmReviewMetrics.map(metric => { const value = review.metrics?.[metric.key]; return <div key={metric.key}><span>{metric.shortLabel}</span><SegmentedLevel label={`${metric.label} de ${review.author}`} levels={metric.levels} value={value} /><small>{metricLevel(metric.levels, value)}</small></div>; })}</div><p className="film-review-comment">{review.comment || 'Sin comentario todavía.'}</p><small>Vista #{visitNumber} · {viewedLabel(review.watchedOn)}</small></article>;
+function ReviewCard({ review, visitNumber, onEdit }: { review: FilmReview; visitNumber: number; onEdit: () => void }) {
+  const own = review.author === session.get()?.username;
+  return <article className="film-review-card"><div><span className="review-avatar">{review.author[0].toUpperCase()}</span><h3>{own ? 'Tu reseña' : review.author === 'tomas' ? 'Reseña de Tomás' : 'Reseña de Avril'}</h3>{own && <button className="icon-edit" type="button" aria-label="Editar reseña" onClick={onEdit}>✎</button>}</div><StarRating label={`Puntuación de ${review.author}`} value={review.rating} /><div className="film-review-metrics">{filmReviewMetrics.map(metric => { const value = review.metrics?.[metric.key]; return <div key={metric.key}><span>{metric.shortLabel}</span><SegmentedLevel label={`${metric.label} de ${review.author}`} levels={metric.levels} value={value} /><small>{metricLevel(metric.levels, value)}</small></div>; })}</div><p className="film-review-comment">{review.comment || 'Sin comentario todavía.'}</p><small>Vista #{visitNumber}</small></article>;
 }
