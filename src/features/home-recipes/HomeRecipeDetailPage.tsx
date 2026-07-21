@@ -26,15 +26,16 @@ export function HomeRecipeDetailPage() {
   if (recipeQuery.isLoading) return <p>Cargando receta…</p>;
 
   const recipe = recipeQuery.data!;
-  const image = recipe.photoUrl ?? recipe.thumbnailUrl;
   const username = session.get()?.username;
 
   return <section className="home-recipe-detail">
     <Link to="/how-cook">← Volver a HowCook</Link>
     <div className="home-recipe-detail__hero">
-      <div className="home-recipe-detail__photo">{image ? <img src={mediaUrl(image)} alt={`Foto de ${recipe.name}`} /> : <span>🍳</span>}</div>
-      <div className="home-recipe-detail__summary"><p className="eyebrow">{recipe.home === 'TOMAS' ? '🏠 CASA TOMÁS' : '🏡 CASA AVRIL'} · {mealName(recipe.mealType).toUpperCase()}</p><h1>{recipe.name}</h1><p>Preparó {recipe.author} el {dateLabel(recipe.preparedOn)} en casa de {homeName(recipe.home)}.</p></div>
-      <div className="detail-actions"><button className="secondary-button" type="button" onClick={() => setEditing(true)}>✎ Editar receta o foto</button><button className="main-button" type="button" onClick={() => setRepeating(true)}>↻ Repetir receta</button></div>
+      <RecipePhoto key={recipe.id} recipe={recipe} />
+      <div className="home-recipe-detail__head">
+        <div className="home-recipe-detail__summary"><p className="eyebrow">{recipe.home === 'TOMAS' ? '🏠 CASA TOMÁS' : '🏡 CASA AVRIL'} · {mealName(recipe.mealType).toUpperCase()}</p><h1>{recipe.name}</h1><div className="home-recipe-detail__author"><span>{recipe.author[0]?.toUpperCase()}</span><p><strong>Preparó {recipe.author}</strong><small>{dateLabel(recipe.preparedOn)} · Casa de {homeName(recipe.home)}</small></p></div></div>
+        <div className="detail-actions home-recipe-detail__actions"><button className="secondary-button" type="button" onClick={() => setEditing(true)}><span aria-hidden="true">✎</span> Editar receta</button><button className="main-button" type="button" onClick={() => setRepeating(true)}><span aria-hidden="true">↻</span> Repetir receta</button></div>
+      </div>
     </div>
     <section className="home-recipe-detail__content">
       <div className="home-recipe-detail__panel"><p className="eyebrow">INGREDIENTES</p><h2>Para preparar</h2><ul>{recipe.ingredients.map((ingredient, index) => <li key={`${ingredient.name}-${index}`}><strong>{ingredient.grams} g</strong> {ingredient.name}</li>)}</ul></div>
@@ -48,6 +49,15 @@ export function HomeRecipeDetailPage() {
     {repeating && <HomeRecipeForm home={recipe.home} copyOf={recipe} onClose={() => setRepeating(false)} />}
     {reviewing && <HomeRecipeReviewForm recipe={recipe} onClose={() => setReviewing(false)} />}
   </section>;
+}
+
+function RecipePhoto({ recipe }: { recipe: HomeRecipe }) {
+  const [imageState, setImageState] = useState<'primary' | 'thumbnail' | 'unavailable'>('primary');
+  const primary = recipe.photoUrl ?? recipe.thumbnailUrl;
+  const thumbnail = recipe.photoUrl && recipe.thumbnailUrl ? recipe.thumbnailUrl : undefined;
+  const image = imageState === 'primary' ? primary : imageState === 'thumbnail' ? thumbnail : undefined;
+  const portrait = !!recipe.photoWidth && !!recipe.photoHeight && recipe.photoHeight > recipe.photoWidth;
+  return <div className="home-recipe-detail__photo">{image ? <><img className={portrait ? 'home-recipe-detail__image home-recipe-detail__image--portrait' : 'home-recipe-detail__image'} src={mediaUrl(image)} alt={`Foto de ${recipe.name}`} onError={() => setImageState(current => current === 'primary' && thumbnail && thumbnail !== primary ? 'thumbnail' : 'unavailable')} /><span className="home-recipe-detail__photo-label">Foto de la receta</span></> : <div className="home-recipe-detail__photo-empty"><span>🍳</span><p>Esta receta todavía no tiene foto.</p></div>}</div>;
 }
 
 function ReviewCard({ author, currentUser, review, onReview }: { author: string; currentUser?: string; review?: HomeRecipeReview; onReview: () => void }) {
