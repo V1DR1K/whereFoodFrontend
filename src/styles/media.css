@@ -1,6 +1,60 @@
 :root {
   --media-gap: 16px;
   --media-surface: #090909;
+  --action-accent: var(--coral);
+  --action-contrast: #281211;
+  --action-shadow: #8e3026;
+}
+
+.film-shell { --action-accent: #b8adff; --action-contrast: #291f43; --action-shadow: #4f427e; }
+.cook-shell { --action-accent: var(--lime); --action-contrast: #26351d; --action-shadow: #394321; }
+.fun-shell { --action-accent: #ff8bca; --action-contrast: #351528; --action-shadow: #7c376b; }
+
+.action-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--action-accent);
+  border-radius: 12px;
+  padding: 10px 13px;
+  color: var(--action-contrast);
+  background: var(--action-accent);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.15;
+  box-shadow: 3px 3px 0 var(--action-shadow);
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.action-button:hover:not(:disabled),
+.action-button:focus-visible {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--action-shadow);
+}
+
+.action-button--edit {
+  color: var(--action-accent);
+  background: color-mix(in srgb, var(--action-accent) 14%, var(--panel));
+}
+
+.action-button--delete {
+  color: #ffb5aa;
+  border-color: #ff8f80;
+  background: #472522;
+  box-shadow: 3px 3px 0 #742f2a;
+}
+
+.action-button--delete:hover:not(:disabled),
+.action-button--delete:focus-visible {
+  background: #5b2a26;
+  box-shadow: 2px 2px 0 #742f2a;
+}
+
+@media (max-width: 540px) {
+  .picks-dashboard { padding-right: 10px; }
+  .module-card__emoji { top: 24px; right: 21px; }
 }
 
 .place-grid,

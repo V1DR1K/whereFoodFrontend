@@ -908,7 +908,7 @@ a {
 }
 
 /* WhatPlan and WhichFilm */
-.picks-dashboard { position: relative; max-width: 1030px; margin: 0 auto; padding: clamp(34px, 7vw, 86px) 0 45px; overflow: hidden; }
+ .picks-dashboard { position: relative; max-width: 1030px; margin: 0 auto; padding: clamp(34px, 7vw, 86px) 12px 45px 0; }
 .picks-dashboard > h1 { position: relative; max-width: 760px; margin: 8px 0 15px; font: 600 clamp(43px, 7vw, 78px)/.94 "Fraunces"; letter-spacing: -3px; }
 .picks-dashboard > h1 span { color: var(--lime); font: 400 .62em/1 sans-serif; letter-spacing: 0; }
 .picks-dashboard > h1 em { color: var(--coral); }
@@ -935,9 +935,16 @@ a {
 .module-card--fun h2 span { color: #ff91ce; }
 .module-card small { z-index: 1; align-self: end; color: #dfdadd; font-size: 14px; }
 .module-card b { z-index: 1; margin-top: 13px; color: var(--lime); font-size: 13px; }
-.module-card__emoji { position: absolute; top: 30px; right: 25px; font-size: 61px; transform: rotate(8deg); animation: floaty 4.8s ease-in-out infinite; }
-.module-card__emoji span { position: absolute; right: -7px; bottom: -18px; font-size: 29px; transform: rotate(-16deg); }
-.module-card--films .module-card__emoji { filter: saturate(.85); animation-delay: .7s; }
+ .module-card__emoji { position: absolute; top: 30px; right: 25px; font-size: 61px; transform: rotate(8deg); animation: module-card-float 4.8s ease-in-out infinite; }
+ .module-card__emoji span { position: absolute; right: -7px; bottom: -18px; font-size: 29px; transform: rotate(-16deg); animation: module-card-spark 2.6s ease-in-out infinite; }
+ .module-card--films .module-card__emoji { filter: saturate(.85); animation-delay: .7s; }
+ .module-card--cook .module-card__emoji { animation-delay: 1.4s; }
+ .module-card--fun .module-card__emoji { animation-delay: 2.1s; }
+ .module-card--films .module-card__emoji span { animation-delay: .5s; }
+ .module-card--cook .module-card__emoji span { animation-delay: 1s; }
+ .module-card--fun .module-card__emoji span { animation-delay: 1.5s; }
+ @keyframes module-card-float { 0%,100% { transform: translate3d(0,0,0) rotate(8deg); } 35% { transform: translate3d(-5px,-9px,0) rotate(2deg) scale(1.04); } 70% { transform: translate3d(4px,-3px,0) rotate(13deg); } }
+ @keyframes module-card-spark { 0%,100% { transform: translate3d(0,0,0) rotate(-16deg) scale(.9); } 50% { transform: translate3d(-7px,-9px,0) rotate(16deg) scale(1.16); } }
 .dashboard-foot { margin: 30px 0 0; color: var(--muted); text-align: center; font: 500 11px "DM Mono"; letter-spacing: .4px; }
 .film-shell .app-header::before { background: #a89af5; }
 .film-hero { display: grid; grid-template-columns: 1.2fr .8fr; align-items: center; min-height: 265px; padding: 36px 0 15px; }
