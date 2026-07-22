@@ -993,24 +993,24 @@ a {
 .film-poster { position: relative; aspect-ratio: 2/3; overflow: hidden; display: grid; place-items: center; background: linear-gradient(135deg,#313044,#1d1b28); font-size: 45px; }
 .film-poster img { width: 100%; height: 100%; object-fit: cover; }
 .film-poster small { position: absolute; right: 8px; bottom: 8px; padding: 5px 7px; border-radius: 7px; background: #17141ccc; color: #f2edeb; font: 600 9px "DM Mono"; letter-spacing: .7px; }
-.film-card__body { display: grid; min-height: 175px; padding: 13px; }
+.film-card__body { min-height: 175px; padding: 13px; }
 .film-card__body>div:first-child { display:flex; gap:8px; justify-content:space-between; }
 .film-card__body p { margin:0; color:var(--muted); font:500 9px "DM Mono"; letter-spacing:.5px; }
 .film-card__body h3 { margin:7px 0; font:600 19px/1.02 "Fraunces"; }
 .film-card__body>b { flex: 0 0 auto; color:var(--lime); white-space:nowrap; }
 .film-card__body>b span { color:#f0cf55; }
-.film-card__rating { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:6px; margin:2px 0 7px; }
+.film-card__rating { display:flex; flex-direction:row; align-items:center; gap:6px; margin:2px 0 7px; }
 .film-card__rating>span,.film-card__metrics span { color:var(--muted); font:500 9px "DM Mono"; letter-spacing:.3px; }
 .film-card__rating i { display:flex; min-width:0; color:#5c5555; font-size:12px; font-style:normal; letter-spacing:1px; }
 .film-card__rating i .filled { color:#ffc52e; }
-.film-card__rating strong,.film-card__metrics b { color:var(--lime); font:600 11px "DM Mono"; }
 .film-card__metrics { display:grid; gap:5px; margin:0 0 7px; }
-.film-card__metrics>div { display:grid; grid-template-columns:68px minmax(0,1fr) 24px; align-items:center; gap:5px; }
+.film-card__metrics>div { display:grid; grid-template-columns:68px minmax(0,1fr); align-items:center; gap:5px; }
 .film-card__metrics .segmented-level { min-height:8px; }
-.film-card__body footer { display:flex; justify-content:space-between; gap:8px; align-self:end; color:var(--muted); font-size:10px; }
+.film-card__body footer { display:flex; justify-content:space-between; gap:8px; margin-top:12px; color:var(--muted); font-size:10px; }
 .film-card__body footer span:last-child { color:#bdb1ff; }
 .genre-pills { display:flex; flex-wrap:wrap; gap:5px; margin:5px 0 12px; }
 .genre-pills span { border:1px solid #514a6c; border-radius:999px; padding:3px 6px; color:#dfd9ed; background:#252333; font-size:10px; }
+.genre-pills__more { color:#bdb1ff!important; }
 .film-form textarea { min-height:90px; }
 .form-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 .film-detail { padding-top:26px; }
@@ -1065,7 +1065,7 @@ a {
 .platform-list h3 { font-size:14px; }.platform-list small{color:var(--muted);font-size:11px}
 @keyframes floaty { 0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-8px) rotate(-4deg)} }
 @media (max-width:820px) { .film-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.film-detail__head{grid-template-columns:180px minmax(0,1fr)}.film-detail__head .detail-actions{grid-column:1/-1}.picks-orbit{right:0} }
-@media (max-width:540px) { .picks-dashboard{padding-top:35px}.picks-dashboard>h1{font-size:47px;letter-spacing:-2px}.picks-orbit{top:12px;right:-15px;font-size:17px}.picks-orbit span{width:40px;height:40px;font-size:20px}.picks-orbit b{display:none}.module-picker{grid-template-columns:1fr;gap:15px;margin-top:34px}.module-card{min-height:220px;border-radius:20px}.film-hero{grid-template-columns:minmax(0,1fr) 94px;min-height:210px;padding-top:28px;overflow:clip}.film-hero h1{font-size:45px;letter-spacing:-2px}.film-hero-art{justify-self:end;font-size:82px;transform:rotate(-4deg)}.film-hero-art span,.film-hero-art b{right:0}.film-controls{align-items:stretch;flex-direction:column}.film-controls label{grid-template-columns:auto minmax(0,1fr)}.film-grid{grid-template-columns:1fr;gap:12px}.film-card{display:flex;min-height:220px}.film-poster{flex:0 0 36%;width:36%;aspect-ratio:auto}.film-card__body{min-height:0;padding:13px}.film-card__body h3{font-size:21px}.film-card__body footer{display:flex;gap:8px}.form-columns{grid-template-columns:1fr}.film-detail__head{grid-template-columns:105px minmax(0,1fr);gap:15px}.film-detail__poster{min-height:158px;border-radius:13px}.film-detail h1{font-size:35px}.film-detail__head .detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.film-detail__head .detail-actions button{width:100%;padding:10px 7px;font-size:12px}.watch-counter{align-items:stretch;flex-direction:column;padding:17px}.watch-counter>div:last-of-type{display:block}.film-review-columns{grid-template-columns:1fr}.platform-settings-form{grid-template-columns:52px minmax(0,1fr)}.platform-settings-form .main-button{grid-column:1/-1}.platform-list article{grid-template-columns:39px minmax(0,1fr) auto}.platform-list article .text-button:last-child{grid-column:2/4;justify-self:start} }
+@media (max-width:540px) { .picks-dashboard{padding-top:35px}.picks-dashboard>h1{font-size:47px;letter-spacing:-2px}.picks-orbit{top:12px;right:-15px;font-size:17px}.picks-orbit span{width:40px;height:40px;font-size:20px}.picks-orbit b{display:none}.module-picker{grid-template-columns:1fr;gap:15px;margin-top:34px}.module-card{min-height:220px;border-radius:20px}.film-hero{grid-template-columns:minmax(0,1fr) 94px;min-height:210px;padding-top:28px;overflow:clip}.film-hero h1{font-size:45px;letter-spacing:-2px}.film-hero-art{justify-self:end;font-size:82px;transform:rotate(-4deg)}.film-hero-art span,.film-hero-art b{right:0}.film-controls{align-items:stretch;flex-direction:column}.film-controls label{grid-template-columns:auto minmax(0,1fr)}.film-grid{grid-template-columns:1fr;gap:12px}.film-card{display:flex;min-height:220px}.film-poster{align-self:stretch;flex:0 0 36%;width:36%;aspect-ratio:auto;line-height:0}.film-poster__image{display:block}.film-poster>span{font-size:45px;line-height:1}.film-card__body{min-height:0;padding:13px}.film-card__body h3{font-size:21px}.film-card__body footer{display:flex;gap:8px}.genre-pills{flex-wrap:nowrap;overflow:hidden}.genre-pills span{flex:0 0 auto}.form-columns{grid-template-columns:1fr}.film-detail__head{grid-template-columns:105px minmax(0,1fr);gap:15px}.film-detail__poster{min-height:158px;border-radius:13px}.film-detail h1{font-size:35px}.film-detail__head .detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.film-detail__head .detail-actions button{width:100%;padding:10px 7px;font-size:12px}.watch-counter{align-items:stretch;flex-direction:column;padding:17px}.watch-counter>div:last-of-type{display:block}.film-review-columns{grid-template-columns:1fr}.platform-settings-form{grid-template-columns:52px minmax(0,1fr)}.platform-settings-form .main-button{grid-column:1/-1}.platform-list article{grid-template-columns:39px minmax(0,1fr) auto}.platform-list article .text-button:last-child{grid-column:2/4;justify-self:start} }
 @media (max-width:540px) { .heart-rain span:nth-child(3n) { display: none; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; } .heart-rain span { animation:none; opacity:.1; transform:translateY(16vh); } }
 
@@ -1115,9 +1115,9 @@ a {
 .genre-settings-form { grid-template-columns:64px minmax(0,1fr) auto; }
 @media (max-width:700px) { .film-settings-grid { gap:28px; } .genre-settings-form { grid-template-columns:52px minmax(0,1fr); } .genre-settings-form .main-button { grid-column:1/-1; } }
 @media (max-width:540px) {
- .film-card__rating { grid-template-columns:minmax(0,1fr) auto; gap:3px 6px; }
- .film-card__rating i { grid-column:1/-1; font-size:11px; }
- .film-card__metrics>div { grid-template-columns:minmax(0,1fr) auto; gap:3px 5px; }
+ .film-card__rating { gap:6px; }
+ .film-card__rating i { font-size:11px; }
+ .film-card__metrics>div { grid-template-columns:minmax(0,1fr); gap:3px 5px; }
  .film-card__metrics .segmented-level { grid-column:1/-1; }
  .film-card__metrics { gap:7px; margin-bottom:9px; }
  .film-card__body { min-height:0; }
