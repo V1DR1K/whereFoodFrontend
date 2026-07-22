@@ -273,13 +273,22 @@ a {
 .quick-nav button,
 .chips button,
 .secondary-button {
+  --button-accent: var(--section-accent);
   white-space: nowrap;
-  border: 1px solid color-mix(in srgb, var(--section-accent) 45%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--button-accent) 45%, var(--line));
   padding: 10px 14px;
   border-radius: 9px;
   background: transparent;
-  color: var(--section-accent);
+  color: var(--button-accent);
 }
+.food-shell .secondary-button,
+.secondary-button--food { --button-accent: #ff6049; }
+.film-shell .secondary-button,
+.secondary-button--film { --button-accent: #b8adff; }
+.cook-shell .secondary-button,
+.secondary-button--cook { --button-accent: #d4ef55; }
+.fun-shell .secondary-button,
+.secondary-button--fun { --button-accent: #ff8bca; }
 .quick-nav button,
 .chips button,
 .secondary-button,

@@ -19,7 +19,9 @@ export function AppLayout() {
   const inFun = location.pathname.startsWith('/why-fun');
   const settingsLink = inFood ? '/food/categories' : inFilms ? '/films/platforms' : '/why-fun/categories';
 
-  return <main className={`app-shell ${inFilms ? 'film-shell' : ''} ${inCook ? 'cook-shell' : ''} ${inFun ? 'fun-shell' : ''}`}>
+  const sectionShell = inFood ? 'food-shell' : inFilms ? 'film-shell' : inCook ? 'cook-shell' : inFun ? 'fun-shell' : '';
+
+  return <main className={`app-shell ${sectionShell}`}>
     <header className="app-header">
       <Link className="brand" to="/" aria-label="WhatPlan, ir al selector">What<span>Plan</span><i>✦</i></Link>
       <div className="header-actions">
