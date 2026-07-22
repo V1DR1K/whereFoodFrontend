@@ -1154,6 +1154,7 @@ a {
 .fun-detail__head .detail-actions button { width:100%; }
 .fun-detail-rating { color:var(--muted); font-size:13px; }
 .fun-detail-rating strong { color:var(--lime); }
+.fun-plan-date { margin:0; color:#f2e9f2; font-size:14px; line-height:1.45; text-transform:capitalize; }.fun-plan-date--large { margin:0 0 13px; font-size:18px; font-weight:700; }
 .fun-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
 .fun-detail-panel { min-height:195px; border:1px solid #5c3d5b; border-radius:17px; padding:19px; background:linear-gradient(125deg,#2b202e,#211e24); }
 .fun-detail-panel h2 { margin:4px 0 16px; font:600 27px "Fraunces"; }
@@ -1173,6 +1174,7 @@ a {
 .fun-photo-gallery img { width:100%; height:100%; object-fit:cover; transition:transform .2s ease; }
 .fun-photo-gallery article>button:first-child:hover img,.fun-photo-gallery article>button:first-child:focus-visible img { transform:scale(1.04); }
 .fun-photo-gallery .text-button { margin-top:6px; }
+.fun-cover-label { display:block; margin-top:6px; color:var(--lime); font-size:11px; }
 .fun-review-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
 .fun-review-card { min-height:185px; padding:17px; border:1px solid var(--line); border-radius:15px; background:var(--panel); }
 .fun-review-card>div { display:flex; align-items:center; gap:9px; }

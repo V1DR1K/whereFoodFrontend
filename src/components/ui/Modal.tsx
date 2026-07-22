@@ -9,6 +9,7 @@ type ModalProps = {
 export function Modal({ children, onClose, confirmDiscard = false, pending = false }: PropsWithChildren<ModalProps>) {
   const dialog = useRef<HTMLElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
+  const requestCloseRef = useRef<() => void>(() => undefined);
   const [dirty, setDirty] = useState(false);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
 
@@ -20,13 +21,14 @@ export function Modal({ children, onClose, confirmDiscard = false, pending = fal
     }
     onClose();
   };
+  requestCloseRef.current = requestClose;
 
   useEffect(() => {
     previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        requestClose();
+        requestCloseRef.current();
       }
       if (event.key !== 'Tab' || !dialog.current) return;
       const focusable = [...dialog.current.querySelectorAll<HTMLElement>('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])')];
@@ -46,7 +48,7 @@ export function Modal({ children, onClose, confirmDiscard = false, pending = fal
       document.removeEventListener('keydown', onKeyDown);
       previousFocus.current?.focus();
     };
-  });
+  }, []);
 
   return <div className="modal-backdrop" role="presentation" onMouseDown={requestClose}>
     <section className="modal" ref={dialog} role="dialog" aria-modal="true" onMouseDown={event => event.stopPropagation()} onInputCapture={() => setDirty(true)} onChangeCapture={() => setDirty(true)}>

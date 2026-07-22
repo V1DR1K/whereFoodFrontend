@@ -2,64 +2,51 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { StarRating } from '../../components/ui/StarRating';
+import { showNotice } from '../../lib/flash';
+import { photoInputAccept, preparePhoto } from '../../lib/photos';
 import { session } from '../../lib/api';
-import type { FunSchedule, FunVenue, FunWeekday } from '../../types/domain';
-import { getAllFunCategories, saveFunReview, saveFunVenue, uploadFunPhoto } from './whyFun';
+import type { FunPlan } from '../../types/domain';
+import { getAllFunCategories, saveFunReview, saveFunPlan, uploadFunPhoto } from './whyFun';
 
-const days: { value: FunWeekday; label: string }[] = [
-  { value: 'MONDAY', label: 'Lunes' }, { value: 'TUESDAY', label: 'Martes' }, { value: 'WEDNESDAY', label: 'Miércoles' }, { value: 'THURSDAY', label: 'Jueves' }, { value: 'FRIDAY', label: 'Viernes' }, { value: 'SATURDAY', label: 'Sábado' }, { value: 'SUNDAY', label: 'Domingo' },
-];
-const seconds = (time: string) => {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 3_600 + minutes * 60;
-};
-const closesAfter = (schedule: FunSchedule) => {
-  const opensAt = seconds(schedule.opensAt);
-  const closesAt = seconds(schedule.closesAt);
-  return closesAt > opensAt ? closesAt : closesAt + 86_400;
-};
-const schedulesOverlap = (first: FunSchedule, second: FunSchedule) => seconds(first.opensAt) < closesAfter(second) && seconds(second.opensAt) < closesAfter(first);
+const localDateTime = () => { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); };
 
-export function FunVenueForm({ venue, reviewOnly = false, onClose }: { venue?: FunVenue; reviewOnly?: boolean; onClose: () => void }) {
+export function FunVenueForm({ plan, reviewOnly = false, onClose }: { plan?: FunPlan; reviewOnly?: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const username = session.get()?.username;
-  const ownReview = venue?.reviews.find(review => review.author === username);
-  const canEditDetails = !venue || venue.author === username;
-  const [categoryId, setCategoryId] = useState<number | undefined>(venue?.category.id);
-  const [subcategoryId, setSubcategoryId] = useState<number | undefined>(venue?.subcategory.id);
-  const [schedules, setSchedules] = useState<FunSchedule[]>(venue?.schedules ?? []);
+  const ownReview = plan?.reviews.find(review => review.author === username);
+  const canEditDetails = !plan || plan.author === username;
+  const [categoryId, setCategoryId] = useState<number | undefined>(plan?.category.id);
+  const [subcategoryId, setSubcategoryId] = useState<number | undefined>(plan?.subcategory.id);
   const [files, setFiles] = useState<File[]>([]);
+  const [photoError, setPhotoError] = useState<string>();
   const [rating, setRating] = useState(ownReview?.rating ?? 4);
   const [comment, setComment] = useState(ownReview?.comment ?? '');
-  const [clientError, setClientError] = useState<string>();
   const categories = useQuery({ queryKey: ['fun-categories', 'all'], queryFn: getAllFunCategories, enabled: !reviewOnly && canEditDetails });
   const roots = (categories.data ?? []).filter(category => !category.parentId && (category.active || category.id === categoryId));
   const subcategories = (categories.data ?? []).filter(category => category.parentId === categoryId && (category.active || category.id === subcategoryId));
   const mutation = useMutation({
-    mutationFn: async (details: { name: string; address: string }) => {
+    mutationFn: async (details: { name: string; address: string; scheduledAt: string }) => {
       if (reviewOnly) {
-        if (!venue) throw new Error('No encontramos el lugar para reseñar');
-        return saveFunReview(venue.id, { rating, comment: comment.trim() || undefined });
+        if (!plan) throw new Error('No encontramos la salida para reseñar');
+        return { review: true, plan: await saveFunReview(plan.id, { rating, comment: comment.trim() || undefined }) };
       }
       if (!canEditDetails || !categoryId || !subcategoryId) throw new Error('Elegí una categoría y una subcategoría');
-      if (!schedules.length) throw new Error('Agregá al menos un horario de apertura');
-      if (schedules.some(schedule => schedule.opensAt === schedule.closesAt)) throw new Error('Cada horario debe tener horas de apertura y cierre distintas');
-      const duplicateOrOverlap = schedules.some((schedule, index) => schedules.some((other, otherIndex) => schedule.day === other.day && index !== otherIndex && schedulesOverlap(schedule, other)));
-      if (duplicateOrOverlap) throw new Error('Los horarios de un mismo día no pueden superponerse');
-      if ((venue?.photos.length ?? 0) + files.length > 12) throw new Error('Cada lugar admite hasta 12 fotos');
-      const input = { name: details.name.trim(), address: details.address.trim(), categoryId, subcategoryId, schedules };
-      if (!input.name || !input.address) throw new Error('Completá el nombre y la dirección');
-      const saved = await saveFunVenue(input, venue?.id);
-      for (const file of files) await uploadFunPhoto(saved.id, file);
-      return saved;
+      if ((plan?.photos.length ?? 0) + files.length > 12) throw new Error('Cada plan admite hasta 12 fotos');
+      const input = { name: details.name.trim(), address: details.address.trim(), scheduledAt: details.scheduledAt, categoryId, subcategoryId };
+      if (!input.name || !input.address || !input.scheduledAt) throw new Error('Completá el nombre, la dirección y la fecha de la salida');
+      const saved = await saveFunPlan(input, plan?.id);
+      try {
+        for (const file of files) await uploadFunPhoto(saved.id, file);
+        return { plan: saved };
+      } catch (error) {
+        return { plan: saved, photoError: error instanceof Error ? error.message : 'No pudimos subir todas las fotos' };
+      }
     },
-    onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: ['fun-venues'] }), qc.invalidateQueries({ queryKey: ['fun-venue', venue?.id] })]); onClose(); },
+    onSuccess: async result => { await Promise.all([qc.invalidateQueries({ queryKey: ['fun-plans'] }), ...(plan ? [qc.invalidateQueries({ queryKey: ['fun-plan', plan.id] })] : [])]); showNotice('review' in result ? 'Guardamos tu opinión de esta salida.' : result.photoError ? `Guardamos la salida, pero algunas fotos no se subieron: ${result.photoError}` : plan ? 'Actualizamos la salida.' : 'Salida agendada.', 'photoError' in result && result.photoError ? 'error' : 'success'); onClose(); },
   });
-  const addSchedule = (day: FunWeekday) => setSchedules(current => [...current, { day, opensAt: '10:00', closesAt: '18:00' }]);
-  const updateSchedule = (index: number, value: Partial<FunSchedule>) => setSchedules(current => current.map((schedule, position) => position === index ? { ...schedule, ...value } : schedule));
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = new FormData(event.currentTarget); setClientError(undefined); mutation.mutate({ name: String(form.get('name') ?? ''), address: String(form.get('address') ?? '') }); };
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = new FormData(event.currentTarget); mutation.mutate({ name: String(form.get('name') ?? ''), address: String(form.get('address') ?? ''), scheduledAt: String(form.get('scheduledAt') ?? '') }); };
 
-  if (reviewOnly) return <Modal onClose={onClose}><form className="fun-review-form" onSubmit={submit}><p className="eyebrow">TU OPINIÓN</p><h2>{ownReview ? 'Actualizá tu experiencia' : '¿Cómo la pasaste?'}</h2><label>Tu puntuación<StarRating label="Puntuación del lugar" value={rating} onChange={setRating} /></label><label>Reseña <small className="tiny">Opcional</small><textarea value={comment} maxLength={1000} onChange={event => setComment(event.target.value)} placeholder="Contá qué hicieron y qué les gustó…" /></label><button className="main-button" disabled={mutation.isPending}>{mutation.isPending ? 'Guardando…' : 'Guardar opinión'} ✦</button>{(clientError || mutation.error) && <p className="form-error">{clientError ?? mutation.error?.message}</p>}</form></Modal>;
+  if (reviewOnly) return <Modal onClose={onClose} confirmDiscard pending={mutation.isPending}><form className="fun-review-form" onSubmit={submit}><p className="eyebrow">TU OPINIÓN</p><h2>{ownReview ? 'Actualizá tu experiencia' : '¿Cómo la pasaron?'}</h2><label>Tu puntuación<StarRating label="Puntuación de la salida" value={rating} onChange={setRating} /></label><label>Reseña <small className="tiny">Opcional</small><textarea value={comment} maxLength={1000} onChange={event => setComment(event.target.value)} placeholder="Contá qué hicieron y qué les gustó…" /></label><button className="main-button" disabled={mutation.isPending}>{mutation.isPending ? 'Guardando…' : 'Guardar opinión'} ✦</button>{mutation.error && <p className="form-error">{mutation.error.message}</p>}</form></Modal>;
 
-  return <Modal onClose={onClose}><form className="fun-venue-form" onSubmit={submit}><p className="eyebrow">{venue ? 'EDITAR SALIDA' : 'NUEVO PLAN'}</p><h2>{venue ? 'Ajustemos los datos' : '¿Qué quieren hacer?'}</h2><label>Nombre<input name="name" defaultValue={venue?.name} placeholder="Ej. Bowling del centro" required autoFocus /></label><label>Dirección<input name="address" defaultValue={venue?.address} placeholder="Calle 123, Rosario" required /></label><fieldset className="tag-picker fun-category-picker"><legend>Categoría</legend><p>Elegí el tipo de plan.</p><div className="tag-options">{roots.map(category => <label className="tag-option" key={category.id}><input type="radio" name="fun-category" checked={categoryId === category.id} onChange={() => { if (categoryId !== category.id) { setCategoryId(category.id); setSubcategoryId(undefined); } }} /><span>{category.icon} {category.name}</span></label>)}</div></fieldset><fieldset className="tag-picker fun-category-picker" disabled={!categoryId}><legend>Subcategoría</legend><p>{categoryId ? 'Elegí una opción para el plan.' : 'Primero elegí una categoría.'}</p><div className="tag-options">{subcategories.map(category => <label className="tag-option" key={category.id}><input type="radio" name="fun-subcategory" checked={subcategoryId === category.id} onChange={() => setSubcategoryId(category.id)} /><span>{category.icon} {category.name}</span></label>)}</div></fieldset><fieldset className="fun-schedule-fields"><legend>Horarios</legend><p>Agregá una o más franjas para cada día. Los días sin franjas se muestran como cerrados.</p>{days.map(day => { const daySchedules = schedules.map((schedule, index) => ({ schedule, index })).filter(value => value.schedule.day === day.value); return <div className="fun-schedule-day" key={day.value}><strong>{day.label}</strong><div>{daySchedules.length ? daySchedules.map(({ schedule, index }) => <span className="fun-time-range" key={index}><input aria-label={`Apertura ${day.label}`} type="time" value={schedule.opensAt} onChange={event => updateSchedule(index, { opensAt: event.target.value })} required /><b>a</b><input aria-label={`Cierre ${day.label}`} type="time" value={schedule.closesAt} onChange={event => updateSchedule(index, { closesAt: event.target.value })} required /><button className="text-button" type="button" onClick={() => setSchedules(current => current.filter((_, position) => position !== index))}>Quitar</button></span>) : <small>Cerrado</small>}<button className="text-button" type="button" onClick={() => addSchedule(day.value)}>+ Franja</button></div></div>; })}</fieldset><label>Fotos <small className="tiny">Hasta 12 en total</small><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={event => setFiles(Array.from(event.target.files ?? []))} /></label>{venue?.photos.length ? <small className="tiny">Las fotos actuales se mantienen; podés sumar nuevas.</small> : null}<button className="main-button" disabled={mutation.isPending}>{mutation.isPending ? 'Guardando…' : venue ? 'Guardar cambios' : 'Agendar salida'} ✦</button>{(clientError || mutation.error) && <p className="form-error">{clientError ?? mutation.error?.message}</p>}</form></Modal>;
+  return <Modal onClose={onClose} confirmDiscard pending={mutation.isPending}><form className="fun-venue-form" onSubmit={submit}><p className="eyebrow">{plan ? 'EDITAR SALIDA' : 'NUEVA SALIDA'}</p><h2>{plan ? 'Ajustemos el plan' : '¿Qué quieren hacer?'}</h2><label>Plan<input name="name" defaultValue={plan?.name} placeholder="Ej. Bowling del centro" required autoFocus /></label><label>Dirección<input name="address" defaultValue={plan?.address} placeholder="Calle 123, Rosario" required /></label><label>¿Cuándo?<input name="scheduledAt" type="datetime-local" defaultValue={plan?.scheduledAt?.slice(0, 16) ?? localDateTime()} required /></label><fieldset className="tag-picker fun-category-picker"><legend>Categoría</legend><p>Elegí el tipo de salida.</p>{categories.isError && <p className="form-error">No pudimos cargar categorías. Reintentá antes de guardar.</p>}<div className="tag-options">{roots.map(category => <label className="tag-option" key={category.id}><input type="radio" name="fun-category" checked={categoryId === category.id} onChange={() => { if (categoryId !== category.id) { setCategoryId(category.id); setSubcategoryId(undefined); } }} /><span>{category.icon} {category.name}</span></label>)}</div></fieldset><fieldset className="tag-picker fun-category-picker" disabled={!categoryId}><legend>Subcategoría</legend><p>{categoryId ? 'Elegí una opción para la salida.' : 'Primero elegí una categoría.'}</p><div className="tag-options">{subcategories.map(category => <label className="tag-option" key={category.id}><input type="radio" name="fun-subcategory" checked={subcategoryId === category.id} onChange={() => setSubcategoryId(category.id)} /><span>{category.icon} {category.name}</span></label>)}</div></fieldset><label>Fotos <small className="tiny">JPG, PNG, WebP o HEIC · hasta 10 MB cada una · máximo 12</small><input type="file" accept={photoInputAccept} multiple onChange={async event => { const selected = [...(event.target.files ?? [])]; setPhotoError(undefined); try { setFiles(await Promise.all(selected.map(preparePhoto))); } catch (error) { setFiles([]); setPhotoError(error instanceof Error ? error.message : 'No pudimos preparar las fotos'); event.currentTarget.value = ''; } }} /></label>{photoError && <p className="form-error">{photoError}</p>}{files.length > 0 && <p className="tiny">Se cargarán {files.length} foto{files.length === 1 ? '' : 's'} al guardar.</p>}<button className="main-button" disabled={mutation.isPending || Boolean(photoError) || categories.isError}>{mutation.isPending ? 'Guardando…' : plan ? 'Guardar salida' : 'Agendar salida'} ✦</button>{mutation.error && <p className="form-error">{mutation.error.message}</p>}</form></Modal>;
 }
