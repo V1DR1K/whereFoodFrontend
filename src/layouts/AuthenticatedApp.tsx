@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { FlashNotice } from '../lib/flash';
 import { AppLayout } from './AppLayout';
 
 const queryClient = new QueryClient({
@@ -6,5 +7,5 @@ const queryClient = new QueryClient({
 });
 
 export function AuthenticatedApp() {
-  return <QueryClientProvider client={queryClient}><AppLayout /></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}><AppLayout /><FlashNotice /></QueryClientProvider>;
 }

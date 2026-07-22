@@ -9,7 +9,13 @@ export const mediaUrl = (path: string) =>
 export const session = {
   get: (): Session | null => {
     const raw = localStorage.getItem('wherefood.session');
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as Session;
+    } catch {
+      localStorage.removeItem('wherefood.session');
+      return null;
+    }
   },
   set: (value: Session) => localStorage.setItem('wherefood.session', JSON.stringify(value)),
   clear: () => localStorage.removeItem('wherefood.session'),
@@ -25,6 +31,11 @@ export async function api<T>(path: string, init: RequestInit = {}) {
       ...init.headers,
     },
   });
+  if (response.status === 401) {
+    session.clear();
+    if (window.location.pathname !== '/login') window.location.assign('/login');
+    throw new Error('Tu sesión venció. Ingresá de nuevo para continuar.');
+  }
   if (!response.ok) {
     throw new Error((await response.json().catch(() => null))?.detail ?? 'No se pudo completar la acción');
   }
