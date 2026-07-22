@@ -1,14 +1,14 @@
 :root {
   --media-gap: 16px;
   --media-surface: #090909;
-  --action-accent: var(--coral);
-  --action-contrast: #281211;
-  --action-shadow: #8e3026;
+  --action-accent: var(--section-accent);
+  --action-contrast: var(--section-contrast);
+  --action-shadow: var(--section-shadow);
 }
 
-.film-shell { --action-accent: #b8adff; --action-contrast: #291f43; --action-shadow: #4f427e; }
-.cook-shell { --action-accent: var(--lime); --action-contrast: #26351d; --action-shadow: #394321; }
-.fun-shell { --action-accent: #ff8bca; --action-contrast: #351528; --action-shadow: #7c376b; }
+.film-shell { --section-accent: #b8adff; --section-contrast: #291f43; --section-shadow: #4f427e; }
+.cook-shell { --section-accent: var(--lime); --section-contrast: #26351d; --section-shadow: #394321; }
+.fun-shell { --section-accent: #ff8bca; --section-contrast: #351528; --section-shadow: #7c376b; }
 
 .action-button {
   display: inline-flex;

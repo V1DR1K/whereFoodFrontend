@@ -7,7 +7,10 @@
   --coral: #ff6049;
   --lime: #d4ef55;
   --violet: #a978ff;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --section-accent: var(--coral);
+  --section-contrast: #281211;
+  --section-shadow: #8e3026;
+  font-family: "DM Sans", sans-serif;
   color: var(--cream);
   background: var(--bg);
 }
@@ -27,13 +30,16 @@ a { color: inherit; }
 .login-card { width: min(420px, 100%); text-align: center; }
 .food-orbit { margin-bottom: 25px; font-size: 42px; letter-spacing: 16px; transform: rotate(-6deg); }
 .food-orbit span { display: inline-block; transform: translateY(-18px); }
-.eyebrow { margin: 0 0 10px; color: var(--lime); font: 500 11px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.5px; }
-.login-card h1 { margin: 0; font: 700 clamp(48px, 9vw, 70px)/.9 Georgia, serif; letter-spacing: -3px; }
+.eyebrow { margin: 0 0 10px; color: var(--lime); font: 500 11px "DM Mono", ui-monospace, monospace; letter-spacing: 1.5px; }
+.login-card h1 { margin: 0; font: 700 clamp(48px, 9vw, 70px)/.9 "Fraunces", Georgia, serif; letter-spacing: -3px; }
 .login-card h1 span { color: var(--coral); }
 .intro { margin: 22px auto; color: #c6bfc0; font-size: 17px; line-height: 1.5; }
 .login-card label { display: grid; gap: 6px; margin: 10px 0; color: #d5ced0; font-size: 12px; text-align: left; }
 .login-card input { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 9px; outline-color: var(--violet); background: #151415; color: var(--cream); }
-.main-button { border: 0; border-radius: 13px; padding: 14px 20px; background: var(--coral); color: #241111; font-weight: 700; box-shadow: 5px 5px 0 #9b3428; }
+.main-button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 13px; padding: 14px 20px; background: var(--section-accent); color: var(--section-contrast); font-weight: 800; box-shadow: 4px 4px 0 var(--section-shadow); transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease; }
+.main-button:hover:not(:disabled), .main-button:focus-visible { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--section-shadow); }
+.main-button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+.main-button:disabled { cursor: not-allowed; opacity: .45; box-shadow: none; }
 .login-card .main-button { width: 100%; margin-top: 10px; }
 .tiny { color: var(--muted); font-size: 12px; }
 .form-error { color: #ff9e90; font-size: 13px; }
