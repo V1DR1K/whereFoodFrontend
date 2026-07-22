@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Modal } from "../../components/ui/Modal";
 import { LoadMore } from "../../components/ui/Pagination";
@@ -7,7 +7,8 @@ import { getCategories } from "../categories/categories";
 import { getHighlightTags } from "./highlightTags";
 import { PlaceCard } from "./PlaceCard";
 import { PlaceForm } from "./PlaceForm";
-import { getPlaces } from "./places";
+import { getArchivedPlaces, getPlaces, restorePlace } from "./places";
+import { showNotice } from "../../lib/flash";
 type FilterOption = { id: number; label: string };
 function FoodFilterChips({
   label,
@@ -94,6 +95,7 @@ function PlaceSection({
   title,
   eyebrow,
   empty,
+  hasFilter,
 }: {
   status: PlaceStatus;
   category?: number;
@@ -101,6 +103,7 @@ function PlaceSection({
   title: string;
   eyebrow: string;
   empty: string;
+  hasFilter: boolean;
 }) {
   const query = useInfiniteQuery({
     queryKey: ["places", status, category, highlightTagId],
@@ -117,7 +120,7 @@ function PlaceSection({
           <p className="eyebrow">{eyebrow}</p>
           <h2>{title}</h2>
         </div>
-        <strong>{list.length} lugares</strong>
+        <strong>Mostrando {list.length} lugar{list.length === 1 ? "" : "es"}</strong>
       </div>
       {query.isError ? (
         <p className="form-error">{query.error.message}</p>
@@ -128,7 +131,7 @@ function PlaceSection({
           ))}
         </div>
       ) : (
-        !query.isLoading && <p className="empty-state">{empty}</p>
+        !query.isLoading && <p className="empty-state">{hasFilter ? "No hay lugares que coincidan con estos filtros." : empty}</p>
       )}
       <LoadMore
         enabled={query.hasNextPage}
@@ -142,6 +145,8 @@ export function DiscoverPage() {
   const [category, setCategory] = useState<number>();
   const [highlightTagId, setHighlightTagId] = useState<number>();
   const [showForm, setShowForm] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const qc = useQueryClient();
   const categories = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
@@ -150,6 +155,9 @@ export function DiscoverPage() {
     queryKey: ["highlight-tags"],
     queryFn: getHighlightTags,
   });
+  const archived = useQuery({ queryKey: ["places", "archived"], queryFn: getArchivedPlaces, enabled: showArchived });
+  const restore = useMutation({ mutationFn: restorePlace, onSuccess: async place => { await Promise.all([qc.invalidateQueries({ queryKey: ["places"] }), qc.invalidateQueries({ queryKey: ["places", "archived"] })]); showNotice(`${place.name} volvió a la lista de lugares.`); } });
+  const hasFilter = Boolean(category || highlightTagId);
   return (
     <>
       <section className="hero">
@@ -204,15 +212,18 @@ export function DiscoverPage() {
         eyebrow="POR PROBAR"
         title="Pendientes para ir"
         empty="Todavía no agendaste ningún lugar."
+        hasFilter={hasFilter}
       />
       <PlaceSection
         status="REVIEWED"
         category={category}
         highlightTagId={highlightTagId}
-        eyebrow="YA PROBAMOS"
-        title="Reseñas hechas"
-        empty="Cuando califiques tu primer pedido, aparecerá acá."
+        eyebrow="YA FUIMOS"
+        title="Visitas registradas"
+        empty="Cuando registren la primera visita, aparecerá acá."
+        hasFilter={hasFilter}
       />
+      <section className="archived-places"><button className="text-button" type="button" onClick={() => setShowArchived(current => !current)}>{showArchived ? "Ocultar archivados" : "Ver lugares archivados"}</button>{showArchived && <>{archived.isError && <p className="form-error">{archived.error.message}</p>}{archived.isLoading && <p className="muted">Cargando archivados…</p>}{!archived.isLoading && !archived.data?.length && <p className="empty-state">No tenés lugares archivados.</p>}{archived.data?.map(place => <article className="archived-place" key={place.id}><span>{place.category.icon}</span><div><strong>{place.name}</strong><small>Archivado. Sus datos y fotos se conservan.</small></div><button className="secondary-button" type="button" disabled={restore.isPending} onClick={() => restore.mutate(place.id)}>Restaurar</button></article>)}</>}</section>
       {showForm && <PlaceForm onClose={() => setShowForm(false)} />}
     </>
   );

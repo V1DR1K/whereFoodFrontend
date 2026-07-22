@@ -41,3 +41,5 @@ export const uploadPlacePhoto = (id: number, file: File) => {
 };
 export const deletePlace = (id: number) =>
   api<void>(`/places/${id}`, { method: "DELETE" });
+export const getArchivedPlaces = () => api<Place[]>("/places/archived");
+export const restorePlace = (id: number) => api<Place>(`/places/${id}/restore`, { method: "POST" });

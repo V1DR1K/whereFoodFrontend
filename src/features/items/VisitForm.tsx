@@ -1,31 +1,44 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createItem, createVisit, updateVisit, uploadPhoto } from "./items";
+import { deleteVisit, createVisit, updateVisit } from "./items";
 import { Modal } from "../../components/ui/Modal";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { showNotice } from "../../lib/flash";
 import type { PlaceVisitSummary } from "../../types/domain";
 
-export function VisitForm({ placeId, visit, onClose, onSaved }: { placeId: number; visit?: PlaceVisitSummary; onClose: () => void; onSaved: (visit: PlaceVisitSummary) => void }) {
-  const [visitedOn, setVisitedOn] = useState(visit?.visitedOn ?? new Date().toLocaleDateString("sv-SE"));
-  const [file, setFile] = useState<File>();
+const today = () => new Date().toLocaleDateString("sv-SE");
+const now = () => new Date().toTimeString().slice(0, 5);
+
+export function VisitForm({ placeId, visit, onClose, onSaved, onDeleted }: { placeId: number; visit?: PlaceVisitSummary; onClose: () => void; onSaved: (visit: PlaceVisitSummary) => void; onDeleted?: () => void }) {
+  const [visitedOn, setVisitedOn] = useState(visit?.visitedOn ?? today());
+  const [visitedAt, setVisitedAt] = useState(visit?.visitedAt ?? now());
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const queryClient = useQueryClient();
+  const invalidate = (visitId?: number) => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["visits", placeId] }),
+    queryClient.invalidateQueries({ queryKey: ["place", placeId] }),
+    ...(visitId ? [queryClient.removeQueries({ queryKey: ["visit", visitId] })] : []),
+  ]);
   const mutation = useMutation({
-    mutationFn: async (form: FormData) => {
-      if (visit) return updateVisit(visit.id, visitedOn);
-      const savedVisit = await createVisit(placeId, visitedOn);
-      const item = await createItem(savedVisit.id, { name: String(form.get("name")) });
-      if (file) await uploadPhoto(item.id, file);
-      return savedVisit;
-    },
-    onSuccess: async (saved) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["visits", placeId] }),
-        queryClient.invalidateQueries({ queryKey: ["visit", saved.id] }),
-        queryClient.invalidateQueries({ queryKey: ["place", placeId] }),
-      ]);
+    mutationFn: () => visit ? updateVisit(visit.id, visitedOn, visitedAt) : createVisit(placeId, visitedOn, visitedAt),
+    onSuccess: async saved => {
+      await invalidate(visit?.id);
       onSaved(saved);
+      showNotice(visit ? "Actualizamos la fecha y hora de la visita." : "Visita registrada. Ahora podés sumar los ítems que pidieron.");
       onClose();
     },
   });
-  const preview = file && URL.createObjectURL(file);
-  return <Modal onClose={onClose}><form onSubmit={(event) => { event.preventDefault(); mutation.mutate(new FormData(event.currentTarget)); }}><p className="eyebrow">{visit ? "EDITAR VISITA" : "NUEVA VISITA"}</p><h2>{visit ? "¿Cuándo fueron?" : "¿Qué pidieron?"}</h2><label>Fecha de visita<input type="date" required value={visitedOn} onChange={(event) => setVisitedOn(event.target.value)} /></label>{!visit && <><label>Ítem<input name="name" required autoFocus placeholder="Ej. Doble cheddar" /></label><label>Foto de la comida<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0])} /></label>{preview && <img className="form-photo-preview" src={preview} alt="Vista previa de la foto" />}</>}<button className="main-button" disabled={mutation.isPending}>{mutation.isPending ? "Guardando…" : visit ? "Guardar fecha" : "Guardar visita"} ✦</button>{mutation.error && <p className="form-error">{mutation.error.message}</p>}</form></Modal>;
+  const remove = useMutation({
+    mutationFn: () => deleteVisit(visit!.id),
+    onSuccess: async () => {
+      await invalidate(visit!.id);
+      showNotice("Eliminamos la visita y sus ítems asociados.");
+      onDeleted?.();
+      onClose();
+    },
+  });
+
+  if (confirmingDelete && visit) return <ConfirmDialog title="¿Borrar esta visita?" message="También se eliminarán los ítems y reseñas cargados en esta fecha." confirmLabel="Borrar visita" pending={remove.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => remove.mutate()} />;
+
+  return <Modal onClose={onClose} confirmDiscard pending={mutation.isPending || remove.isPending}><form onSubmit={event => { event.preventDefault(); mutation.mutate(); }}><p className="eyebrow">{visit ? "EDITAR VISITA" : "NUEVA VISITA"}</p><h2>{visit ? "¿Cuándo fueron?" : "Registren cuándo fueron"}</h2><p className="muted">La visita se guarda por separado. Después pueden añadir todos los ítems que pidieron.</p><div className="form-columns"><label>Fecha de visita<input type="date" required max={today()} value={visitedOn} onChange={event => setVisitedOn(event.target.value)} /></label><label>Hora aproximada<input type="time" required value={visitedAt} onChange={event => setVisitedAt(event.target.value)} /></label></div><button className="main-button" disabled={mutation.isPending || remove.isPending}>{mutation.isPending ? "Guardando…" : visit ? "Guardar visita" : "Registrar visita"} ✦</button>{visit && <button className="danger-button" type="button" disabled={mutation.isPending || remove.isPending} onClick={() => setConfirmingDelete(true)}>Borrar visita</button>}{(mutation.error || remove.error) && <p className="form-error">{(mutation.error || remove.error)!.message}</p>}</form></Modal>;
 }

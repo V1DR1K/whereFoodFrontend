@@ -1,12 +1,12 @@
 export type Category={id:number;name:string;slug:string;icon:string;active:boolean};
 export type HighlightTag={id:number;name:string;emoji:string};
 export type PlaceStatus='PENDING'|'REVIEWED';
-export type PlaceReview={author:string;comment?:string;location:number;heating:number;bathrooms:number;exterior:number;seating:number;service:number;ambiance:number};
+export type PlaceReview={author:string;comment?:string;location?:number;heating?:number;bathrooms?:number;exterior?:number;seating?:number;service?:number;ambiance?:number};
 export type Place={id:number;name:string;address?:string;sourceUrl?:string;mapsUrl?:string;status:PlaceStatus;category:Category;tags:HighlightTag[];author:string;rating:number;tasteAverage:number;priceAverage:number;venueAverage:number;itemCount:number;photoUrl?:string;thumbnailUrl?:string;photoWidth?:number;photoHeight?:number;reviews:PlaceReview[];createdAt:string};
 export type ItemReview={author:string;comment?:string;taste:number;price:number;createdAt:string;updatedAt:string};
 export type Item={id:number;name:string;createdBy:string;photoUrl?:string;thumbnailUrl?:string;photoWidth?:number;photoHeight?:number;reviews:ItemReview[];createdAt:string};
-export type PlaceVisitSummary={id:number;visitedOn:string;createdAt:string};
-export type PlaceVisit={id:number;placeId:number;visitedOn:string;createdBy:string;items:Item[];createdAt:string};
+export type PlaceVisitSummary={id:number;visitedOn:string;visitedAt?:string;createdBy:string;createdAt:string};
+export type PlaceVisit={id:number;placeId:number;visitedOn:string;visitedAt?:string;createdBy:string;items:Item[];createdAt:string};
 export type Slice<T>={content:T[];nextCursor:number|null};
 export type Session={token:string;username:string;role:'USER'|'ADMIN'};
 export type WatchPlatform={id:number;name:string;icon:string;active:boolean};

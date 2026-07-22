@@ -5,6 +5,7 @@ import { deleteItem } from "./items";
 import { AdaptivePhoto } from "../../components/ui/AdaptivePhoto";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { StarRating } from "../../components/ui/StarRating";
+import { showNotice } from "../../lib/flash";
 
 export function ItemCard({ item, username, onEditItem, onEditReview }: { item: Item; username?: string; onEditItem: (item: Item) => void; onEditReview: (item: Item) => void }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -17,11 +18,12 @@ export function ItemCard({ item, username, onEditItem, onEditReview }: { item: I
         queryClient.invalidateQueries({ queryKey: ["visits"] }),
         queryClient.invalidateQueries({ queryKey: ["place"] }),
       ]);
+      showNotice("Eliminamos el ítem.");
     },
   });
   const photoUrl = item.photoUrl ?? item.thumbnailUrl;
   const ownReview = item.reviews.find((review) => review.author === username);
-  const canManageItem = Boolean(username);
+  const canManageItem = item.createdBy === username;
 
   if (confirmingDelete) return <ConfirmDialog title="¿Borrar este ítem?" message={remove.error ? remove.error.message : "Dejará de mostrarse en esta visita."} confirmLabel="Borrar ítem" pending={remove.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => remove.mutate()} />;
 

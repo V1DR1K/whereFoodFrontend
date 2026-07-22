@@ -3,257 +3,98 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { getCategories } from "../categories/categories";
 import { getHighlightTags, saveHighlightTag } from "./highlightTags";
-import {
-  savePlace,
-  savePlaceReview,
-  uploadPlacePhoto,
-  deletePlace,
-  type PlaceReviewInput,
-} from "./places";
+import { savePlace, savePlaceReview, uploadPlacePhoto, deletePlace, type PlaceReviewInput } from "./places";
 import { Modal } from "../../components/ui/Modal";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { ReviewPrompt } from "../../components/ui/ReviewPrompt";
 import { StarRating } from "../../components/ui/StarRating";
+import { showNotice } from "../../lib/flash";
+import { photoInputAccept, preparePhoto } from "../../lib/photos";
 import { session } from "../../lib/api";
 import type { Place } from "../../types/domain";
-const mapsSearch = (address: string) =>
-  address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${address}, Rosario, Santa Fe, Argentina`)}`
-    : undefined;
-const categories = [
-  ["location", "📍 Ubicación"],
-  ["heating", "🌡️ Calefacción"],
-  ["bathrooms", "🚻 Baños"],
-  ["exterior", "🌿 Exterior"],
-  ["seating", "🪑 Asientos"],
-  ["service", "🤝 Atención"],
-  ["ambiance", "✨ Ambiente"],
+
+const mapsSearch = (address: string) => address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : undefined;
+const scoreCategories = [
+  ["location", "📍 Ubicación"], ["heating", "🌡️ Calefacción"], ["bathrooms", "🚻 Baños"], ["exterior", "🌿 Exterior"], ["seating", "🪑 Asientos"], ["service", "🤝 Atención"], ["ambiance", "✨ Ambiente"],
 ] as const;
-export function PlaceForm({
-  onClose,
-  place,
-}: {
-  onClose: () => void;
-  place?: Place;
-}) {
+type ScoreKey = (typeof scoreCategories)[number][0];
+type Scores = Record<ScoreKey, number | undefined>;
+
+export function PlaceForm({ onClose, place, mode = "details" }: { onClose: () => void; place?: Place; mode?: "details" | "review" }) {
   const username = session.get()?.username;
   const canEditDetails = !place || place.author === username;
-  const ownReview = place?.reviews.find((r) => r.author === username);
-  const [scores, setScores] = useState<
-    Record<(typeof categories)[number][0], number>
-  >({
-    location: ownReview?.location ?? 4,
-    heating: ownReview?.heating ?? 4,
-    bathrooms: ownReview?.bathrooms ?? 4,
-    exterior: ownReview?.exterior ?? 4,
-    seating: ownReview?.seating ?? 4,
-    service: ownReview?.service ?? 4,
-    ambiance: ownReview?.ambiance ?? 4,
+  const reviewing = Boolean(place && mode === "review");
+  const ownReview = place?.reviews.find(review => review.author === username);
+  const [scores, setScores] = useState<Scores>({
+    location: ownReview?.location, heating: ownReview?.heating, bathrooms: ownReview?.bathrooms, exterior: ownReview?.exterior, seating: ownReview?.seating, service: ownReview?.service, ambiance: ownReview?.ambiance,
   });
   const [file, setFile] = useState<File>();
+  const [photoError, setPhotoError] = useState<string>();
   const [created, setCreated] = useState<Place>();
-  const [categoryId, setCategoryId] = useState(() =>
-    place?.category.id ? String(place.category.id) : "",
-  );
-  const [tagIds, setTagIds] = useState<number[]>(() => place?.tags.map((tag) => tag.id) ?? []);
+  const [categoryId, setCategoryId] = useState(() => place?.category.id ? String(place.category.id) : "");
+  const [tagIds, setTagIds] = useState<number[]>(() => place?.tags.map(tag => tag.id) ?? []);
   const [newTagName, setNewTagName] = useState("");
   const [newTagEmoji, setNewTagEmoji] = useState("✨");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const navigate = useNavigate();
-  const categoriesQuery = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-    enabled: canEditDetails,
-  });
   const qc = useQueryClient();
-  const tagsQuery = useQuery({ queryKey: ["highlight-tags"], queryFn: getHighlightTags, enabled: canEditDetails });
+  const categoriesQuery = useQuery({ queryKey: ["categories"], queryFn: getCategories, enabled: canEditDetails && !reviewing });
+  const tagsQuery = useQuery({ queryKey: ["highlight-tags"], queryFn: getHighlightTags, enabled: canEditDetails && !reviewing });
   const addTag = useMutation({
     mutationFn: () => saveHighlightTag({ name: newTagName.trim(), emoji: newTagEmoji.trim() }),
-    onSuccess: async (tag) => { await qc.invalidateQueries({ queryKey: ["highlight-tags"] }); setTagIds((current) => [...current, tag.id]); setNewTagName(""); setNewTagEmoji("✨"); },
+    onSuccess: async tag => { await qc.invalidateQueries({ queryKey: ["highlight-tags"] }); setTagIds(current => [...current, tag.id]); setNewTagName(""); setNewTagEmoji("✨"); },
   });
   const mutation = useMutation({
     mutationFn: async (form: FormData) => {
-      if (!place) {
-        const address = String(form.get("address")).trim();
-        const saved = await savePlace({
-          name: String(form.get("name")),
-          address: address || undefined,
-          sourceUrl: String(form.get("sourceUrl")) || undefined,
-          mapsUrl: mapsSearch(address),
-          categoryId: Number(form.get("categoryId")),
-          tagIds,
-        });
-        return file ? uploadPlacePhoto(saved.id, file) : saved;
+      if (reviewing && place) {
+        await savePlaceReview(place.id, { comment: String(form.get("reviewComment")) || undefined, ...scores } as PlaceReviewInput);
+        return { place, review: true };
       }
-      let saved = place;
-      if (canEditDetails) {
-        const address = String(form.get("address")).trim();
-        saved = await savePlace(
-          {
-            name: String(form.get("name")),
-            address: address || undefined,
-            sourceUrl: String(form.get("sourceUrl")) || undefined,
-            mapsUrl: mapsSearch(address),
-            categoryId: Number(form.get("categoryId")),
-            tagIds,
-          },
-          place.id,
-        );
-        if (file) saved = await uploadPlacePhoto(place.id, file);
+      const address = String(form.get("address")).trim();
+      const input = { name: String(form.get("name")).trim(), address: address || undefined, sourceUrl: String(form.get("sourceUrl")) || undefined, mapsUrl: mapsSearch(address), categoryId: Number(form.get("categoryId")), tagIds };
+      const saved = await savePlace(input, place?.id);
+      try {
+        return { place: file ? await uploadPlacePhoto(saved.id, file) : saved };
+      } catch (error) {
+        return { place: saved, photoError: error instanceof Error ? error.message : "No pudimos subir la foto" };
       }
-      await savePlaceReview(place.id, {
-        comment: String(form.get("reviewComment")) || undefined,
-        ...scores,
-      } as PlaceReviewInput);
-      return saved;
     },
-    onSuccess: async (value) => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["places"] }),
-        qc.invalidateQueries({ queryKey: ["place", place?.id] }),
-      ]);
-      if (!place) { setCreated(value); return; }
+    onSuccess: async result => {
+      await Promise.all([qc.invalidateQueries({ queryKey: ["places"] }), qc.invalidateQueries({ queryKey: ["place", place?.id ?? result.place.id] })]);
+      if (!place) {
+        setCreated(result.place);
+        if (result.photoError) showNotice(`Guardamos el lugar, pero la foto no se subió: ${result.photoError}`, "error");
+        return;
+      }
+      showNotice(result.photoError ? `Guardamos los cambios, pero la foto no se subió: ${result.photoError}` : reviewing ? "Guardamos tu reseña del lugar." : "Actualizamos el lugar.", result.photoError ? "error" : "success");
       onClose();
     },
   });
   const deleteMutation = useMutation({
     mutationFn: () => deletePlace(place!.id),
-    onSuccess: async () => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["places"] }),
-        qc.removeQueries({ queryKey: ["place", place!.id] }),
-      ]);
-      navigate("/food");
-    },
+    onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: ["places"] }), qc.removeQueries({ queryKey: ["place", place!.id] })]); showNotice("Movimos el lugar a archivados. Podés restaurarlo cuando quieras."); navigate("/food"); },
   });
-  if (created) return <ReviewPrompt name={created.name} reviewTo={`/food/places/${created.id}`} onClose={onClose} />;
-  if (confirmingDelete && place) return <ConfirmDialog title="¿Desactivar este lugar?" message="Dejará de aparecer en WhatPlan, pero sus datos y fotos se conservarán." confirmLabel="Desactivar lugar" pending={deleteMutation.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => deleteMutation.mutate()} />;
-  return (
-    <Modal onClose={onClose}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          mutation.mutate(new FormData(e.currentTarget));
-        }}
-      >
-        <p className="eyebrow">
-          {place
-            ? canEditDetails
-              ? "EDITAR LUGAR"
-              : "CALIFICAR LUGAR"
-            : "NUEVO PENDIENTE"}
-        </p>
-        <h2>{place ? "Tu experiencia en el lugar" : "Guardalo para ir"}</h2>
-        {canEditDetails && (
-          <>
-            <label>
-              Nombre
-              <input
-                name="name"
-                defaultValue={place?.name}
-                required
-                autoFocus
-              />
-            </label>
-            <label>
-              Dirección
-              <input
-                name="address"
-                defaultValue={place?.address}
-                placeholder="Calle 123, Rosario"
-              />
-            </label>
-            <label>
-              URL de referencia
-              <input
-                name="sourceUrl"
-                type="url"
-                defaultValue={place?.sourceUrl}
-                placeholder="https://instagram.com/reel/..."
-              />
-            </label>
-            <label>
-              Tipo
-              <select
-                name="categoryId"
-                value={categoryId}
-                onChange={(event) => setCategoryId(event.target.value)}
-                required
-              >
-                <option value="">Elegí una categoría</option>
-                {categoriesQuery.data?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.icon} {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Foto del lugar
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => setFile(e.target.files?.[0])}
-              />
-            </label>
-            {place?.photoUrl && !file && (
-              <small className="tiny">
-                La foto actual se conservará si no elegís otra.
-              </small>
-            )}
-            <fieldset className="tag-picker">
-              <legend>¿Por qué se destaca?</legend>
-              <p>Elegí todas las etiquetas que correspondan.</p>
-              <div className="tag-options">
-                {tagsQuery.data?.map((tag) => <label className="tag-option" key={tag.id}><input type="checkbox" checked={tagIds.includes(tag.id)} onChange={() => setTagIds((current) => current.includes(tag.id) ? current.filter((id) => id !== tag.id) : [...current, tag.id])} /><span>{tag.emoji} {tag.name}</span></label>)}
-              </div>
-              <div className="tag-create-row">
-                <input aria-label="Emoji de nueva etiqueta" value={newTagEmoji} onChange={(event) => setNewTagEmoji(event.target.value)} maxLength={8} />
-                <input aria-label="Nombre de nueva etiqueta" placeholder="Nueva etiqueta" value={newTagName} onChange={(event) => setNewTagName(event.target.value)} />
-                <button type="button" className="secondary-button" disabled={!newTagName.trim() || !newTagEmoji.trim() || addTag.isPending} onClick={() => addTag.mutate()}>Añadir</button>
-              </div>
-              {addTag.error && <p className="form-error">No pudimos añadir la etiqueta. Probá con otro nombre.</p>}
-            </fieldset>
-          </>
-        )}
-        {place && (
-          <>
-            <label>
-              Reseña del lugar
-              <textarea
-                name="reviewComment"
-                defaultValue={ownReview?.comment}
-                placeholder="Contá cómo estuvo el lugar…"
-              />
-            </label>
-            <div className="venue-score-grid">
-              {categories.map(([key, label]) => (
-                <label className="score-field" key={key}>
-                  {label}
-                  <StarRating
-                    label={label}
-                    value={scores[key]}
-                    onChange={(value) => setScores({ ...scores, [key]: value })}
-                  />
-                </label>
-              ))}
-            </div>
-          </>
-        )}
-        <button className="main-button" disabled={mutation.isPending || deleteMutation.isPending}>
-          {mutation.isPending
-            ? "Guardando…"
-            : place
-              ? "Guardar experiencia"
-              : "Agendar pendiente"}{" "}
-          ✦
-        </button>
-        {place && canEditDetails && <button className="danger-button" type="button" disabled={mutation.isPending || deleteMutation.isPending} onClick={() => setConfirmingDelete(true)}>Desactivar lugar</button>}
-        {mutation.error && (
-          <p className="form-error">{mutation.error.message}</p>
-        )}
-        {deleteMutation.error && <p className="form-error">{deleteMutation.error.message}</p>}
-      </form>
-    </Modal>
-  );
+
+  if (created) return <ReviewPrompt name={created.name} reviewTo={`/food/places/${created.id}`} onClose={onClose} actionLabel="Registrar una visita" message="El lugar ya está guardado. Cuando vayan, registren la visita y después agreguen los ítems." />;
+  if (confirmingDelete && place) return <ConfirmDialog title="¿Archivar este lugar?" message="Dejará de aparecer en la lista, pero conservará sus fotos y reseñas. Podés restaurarlo desde Archivados." confirmLabel="Archivar lugar" pending={deleteMutation.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => deleteMutation.mutate()} />;
+
+  const pending = mutation.isPending || deleteMutation.isPending;
+  return <Modal onClose={onClose} confirmDiscard pending={pending}><form onSubmit={event => { event.preventDefault(); mutation.mutate(new FormData(event.currentTarget)); }}><p className="eyebrow">{reviewing ? "CALIFICAR LUGAR" : place ? "EDITAR LUGAR" : "NUEVO PENDIENTE"}</p><h2>{reviewing ? "Tu experiencia en el lugar" : place ? "Ajustemos los datos" : "Guardalo para ir"}</h2>{!reviewing && <>
+    <label>Nombre<input name="name" defaultValue={place?.name} required autoFocus /></label>
+    <label>Dirección <small className="tiny">Opcional</small><input name="address" defaultValue={place?.address} placeholder="Calle 123, Rosario" /></label>
+    <label>URL de referencia <small className="tiny">Opcional</small><input name="sourceUrl" type="url" defaultValue={place?.sourceUrl} placeholder="https://instagram.com/reel/..." /></label>
+    <label>Tipo<select name="categoryId" value={categoryId} onChange={event => setCategoryId(event.target.value)} required><option value="">Elegí una categoría</option>{categoriesQuery.data?.map(category => <option key={category.id} value={category.id}>{category.icon} {category.name}</option>)}</select></label>
+    <label>Foto del lugar <small className="tiny">JPG, PNG, WebP o HEIC · hasta 10 MB</small><input type="file" accept={photoInputAccept} onChange={async event => { const selected = event.target.files?.[0]; setPhotoError(undefined); if (!selected) return setFile(undefined); try { setFile(await preparePhoto(selected)); } catch (error) { setFile(undefined); setPhotoError(error instanceof Error ? error.message : "No pudimos preparar la foto"); event.currentTarget.value = ""; } }} /></label>
+    {photoError && <p className="form-error">{photoError}</p>}
+    {place?.photoUrl && !file && <small className="tiny">La foto actual se conservará si no elegís otra.</small>}
+    <fieldset className="tag-picker"><legend>¿Por qué se destaca?</legend><p>Elegí todas las etiquetas que correspondan.</p><div className="tag-options">{tagsQuery.data?.map(tag => <label className="tag-option" key={tag.id}><input type="checkbox" checked={tagIds.includes(tag.id)} onChange={() => setTagIds(current => current.includes(tag.id) ? current.filter(id => id !== tag.id) : [...current, tag.id])} /><span>{tag.emoji} {tag.name}</span></label>)}</div><div className="tag-create-row"><input aria-label="Emoji de nueva etiqueta" value={newTagEmoji} onChange={event => setNewTagEmoji(event.target.value)} maxLength={8} /><input aria-label="Nombre de nueva etiqueta" placeholder="Nueva etiqueta" value={newTagName} onChange={event => setNewTagName(event.target.value)} /><button type="button" className="secondary-button" disabled={!newTagName.trim() || !newTagEmoji.trim() || addTag.isPending} onClick={() => addTag.mutate()}>Añadir</button></div>{addTag.error && <p className="form-error">No pudimos añadir la etiqueta. Probá con otro nombre.</p>}</fieldset>
+  </>}{reviewing && <>
+    <label>Reseña del lugar<textarea name="reviewComment" defaultValue={ownReview?.comment} placeholder="Contá cómo estuvo el lugar…" /></label>
+    <p className="tiny">Calificá sólo lo que aplique a este lugar. Podés dejar los demás aspectos sin puntuar.</p>
+    <div className="venue-score-grid">{scoreCategories.map(([key, label]) => <label className="score-field" key={key}>{label}<span className="place-score-input"><StarRating label={label} value={scores[key]} onChange={value => setScores(current => ({ ...current, [key]: value }))} /><button className="text-button" type="button" onClick={() => setScores(current => ({ ...current, [key]: undefined }))} disabled={scores[key] === undefined}>No aplica</button></span></label>)}</div>
+  </>}
+  <button className="main-button" disabled={pending || Boolean(photoError)}>{mutation.isPending ? "Guardando…" : reviewing ? "Guardar reseña" : place ? "Guardar lugar" : "Agendar pendiente"} ✦</button>
+  {place && !reviewing && canEditDetails && <button className="danger-button" type="button" disabled={pending} onClick={() => setConfirmingDelete(true)}>Archivar lugar</button>}
+  {(mutation.error || deleteMutation.error) && <p className="form-error">{(mutation.error || deleteMutation.error)!.message}</p>}
+  </form></Modal>;
 }
