@@ -14,6 +14,7 @@ export function ItemForm({ placeId, visitId, onClose, item }: { placeId: number;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const queryClient = useQueryClient();
   const invalidate = () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["places"] }),
     queryClient.invalidateQueries({ queryKey: ["visit", visitId] }),
     queryClient.invalidateQueries({ queryKey: ["visits", placeId] }),
     queryClient.invalidateQueries({ queryKey: ["place", placeId] }),

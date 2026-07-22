@@ -138,6 +138,26 @@
   font-weight: 800;
 }
 
+.home-recipe-detail__actions .secondary-button {
+  min-height: 44px;
+  border-color: var(--action-accent);
+  color: var(--action-accent);
+  background: color-mix(in srgb, var(--action-accent) 14%, var(--panel));
+  font-weight: 800;
+}
+
+.home-recipe-form .danger-button,
+.modal form .danger-button {
+  border-color: #ff8f80;
+  color: #ffb5aa;
+  background: #472522;
+  box-shadow: 3px 3px 0 #742f2a;
+}
+
+.fun-detail__head .detail-actions .main-button {
+  order: -1;
+}
+
 .food-poster {
   height: auto;
   aspect-ratio: var(--media-aspect-ratio, 4 / 3);
@@ -243,6 +263,7 @@
 
   .fun-detail__head .detail-actions .main-button {
     grid-column: 1 / -1;
+    order: -1;
   }
 
   .fun-detail__head .detail-actions .secondary-button {

@@ -13,6 +13,7 @@ export function ItemReviewForm({ item, review, placeId, visitId, onClose }: { it
     mutationFn: (form: FormData) => saveItemReview(item.id, { comment: String(form.get("comment")) || undefined, ...scores }),
     onSuccess: async () => {
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["places"] }),
         queryClient.invalidateQueries({ queryKey: ["visit", visitId] }),
         queryClient.invalidateQueries({ queryKey: ["place", placeId] }),
       ]);

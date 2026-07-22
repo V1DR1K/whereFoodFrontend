@@ -13,6 +13,7 @@ export function VisitForm({ placeId, visit, onClose, onSaved, onDeleted }: { pla
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const queryClient = useQueryClient();
   const invalidate = (visitId?: number) => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["places"] }),
     queryClient.invalidateQueries({ queryKey: ["visits", placeId] }),
     queryClient.invalidateQueries({ queryKey: ["place", placeId] }),
     ...(visitId ? [queryClient.removeQueries({ queryKey: ["visit", visitId] })] : []),

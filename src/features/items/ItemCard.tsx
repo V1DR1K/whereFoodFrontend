@@ -14,6 +14,7 @@ export function ItemCard({ item, username, onEditItem, onEditReview }: { item: I
     mutationFn: () => deleteItem(item.id),
     onSuccess: async () => {
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["places"] }),
         queryClient.invalidateQueries({ queryKey: ["visit"] }),
         queryClient.invalidateQueries({ queryKey: ["visits"] }),
         queryClient.invalidateQueries({ queryKey: ["place"] }),
