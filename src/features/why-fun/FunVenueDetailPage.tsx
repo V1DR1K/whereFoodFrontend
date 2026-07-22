@@ -139,11 +139,6 @@ export function FunVenueDetailPage() {
           </div>
         </div>
         <div className="detail-actions">
-          {!hasOccurred && (
-            <p className="muted">
-              Las opiniones se habilitan cuando termine la salida.
-            </p>
-          )}
           {own && (
             <button
               className="secondary-button"
