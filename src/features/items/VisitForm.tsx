@@ -6,7 +6,7 @@ import type { PlaceVisitSummary } from "../../types/domain";
 import { createVisit, deleteVisit, updateVisit } from "./items";
 import { Modal } from "../../components/ui/Modal";
 
-const today = () => new Date().toLocaleDateString("sv-SE");
+const today = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date());
 
 export function VisitForm({ placeId, visit, onClose, onSaved, onDeleted }: { placeId: number; visit?: PlaceVisitSummary; onClose: () => void; onSaved: (visit: PlaceVisitSummary) => void; onDeleted?: () => void }) {
   const [visitedOn, setVisitedOn] = useState(visit?.visitedOn ?? today());

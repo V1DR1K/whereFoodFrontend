@@ -5,16 +5,15 @@ import { SegmentedLevel } from "../../components/ui/SegmentedLevel";
 import { StarRating } from "../../components/ui/StarRating";
 import { mediaUrl, session } from "../../lib/api";
 import { showNotice } from "../../lib/flash";
-import type { ExperiencePhoto, FilmReview, FilmView } from "../../types/domain";
+import type { FilmReview, FilmView } from "../../types/domain";
 import { FilmForm } from "./FilmForm";
 import { FilmReviewForm } from "./FilmReviewForm";
 import { FilmViewForm } from "./FilmViewForm";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { ExperienceGallery } from "../../components/ui/ExperienceGallery";
-import { deleteFilm, deleteFilmView, deleteFilmViewPhoto, getFilm, uploadFilmViewPhoto } from "./films";
+import { deleteFilm, deleteFilmView, getFilm } from "./films";
 import { filmReviewMetrics, metricLevel } from "./reviewMetrics";
 
-const viewedLabel = (date?: string, time?: string) =>
+const viewedLabel = (date?: string) =>
   date
     ? `VISTA ${date.split("-").reverse().join("/")}`
     : "PARA VER";
@@ -34,7 +33,6 @@ export function FilmDetailPage() {
   }>();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingDeleteView, setConfirmingDeleteView] = useState<FilmView>();
-  const [deletingPhoto, setDeletingPhoto] = useState<ExperiencePhoto>();
   const [selectedViewId, setSelectedViewId] = useState<number>();
   const filmQuery = useQuery({
     queryKey: ["film", id],
@@ -61,8 +59,6 @@ export function FilmDetailPage() {
       setSelectedViewId(undefined);
     },
   });
-  const uploadPhotos = useMutation({ mutationFn: async ({ viewId, files }: { viewId: number; files: File[] }) => { for (const file of files) await uploadFilmViewPhoto(id, viewId, file); }, onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: ["film", id] }), qc.invalidateQueries({ queryKey: ["films"] })]); showNotice("Agregamos las fotos a esta vista."); } });
-  const removePhoto = useMutation({ mutationFn: (photoId: number) => deleteFilmViewPhoto(photoId), onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: ["film", id] }), qc.invalidateQueries({ queryKey: ["films"] })]); showNotice("Quitamos la foto."); setDeletingPhoto(undefined); } });
   const views = filmQuery.data?.views ?? [];
   useEffect(() => {
     if (views.length && !views.some((view) => view.id === selectedViewId))
@@ -136,9 +132,9 @@ export function FilmDetailPage() {
             {synopsis || "Todavía no hay una sinopsis disponible."}
           </p>
         </div>
-        <div className="detail-actions">
-          <button className="secondary-button" onClick={() => setEditing(true)}>✎ {film.tmdbId ? "Editar disponibilidad" : "Editar película"}</button>
+        <div className="detail-actions detail-actions--triplet">
           <button className="main-button" onClick={() => setAddingView(true)}>＋ {viewAction}</button>
+          <button className="secondary-button" onClick={() => setEditing(true)}>✎ {film.tmdbId ? "Editar disponibilidad" : "Editar película"}</button>
           <button className="danger-button" disabled={remove.isPending} onClick={() => setConfirmingDelete(true)}>{remove.isPending ? "Borrando…" : "× Borrar película"}</button>
         </div>
       </div>
@@ -237,11 +233,6 @@ export function FilmDetailPage() {
           </h2>
           <p>Última vista: {viewedLabel(film.lastWatchedOn)}</p>
         </div>
-        <div>
-          <button className="counter-add" onClick={() => setAddingView(true)}>
-            {viewAction}
-          </button>
-        </div>
       </section>
       <section className="reviews-section">
         <div className="section-title">
@@ -264,7 +255,7 @@ export function FilmDetailPage() {
                 {views.map((view, index) => (
                   <option key={view.id} value={view.id}>
                     Vista #{views.length - index} ·{" "}
-                    {viewedLabel(view.watchedOn, view.watchedAt)}
+                     {viewedLabel(view.watchedOn)}
                   </option>
                 ))}
               </select>
@@ -291,10 +282,9 @@ export function FilmDetailPage() {
           <>
             <p className="muted">
               Vista del{" "}
-              {viewedLabel(selectedView.watchedOn, selectedView.watchedAt)}.
+               {viewedLabel(selectedView.watchedOn)}.
               Registrada por {selectedView.createdBy}; última edición de {selectedView.updatedBy}.
             </p>
-            <ExperienceGallery accentLabel="VISTA" emptyIcon="🎬" name={`${title}, ${viewedLabel(selectedView.watchedOn, selectedView.watchedAt)}`} photos={selectedView.photos} onUpload={(files) => uploadPhotos.mutateAsync({ viewId: selectedView.id, files })} onDelete={setDeletingPhoto} />
             <div className="section-title section-title--compact">
               <div>
                 <p className="eyebrow">RESEÑAS DE ESTA VISTA</p>
@@ -392,7 +382,6 @@ export function FilmDetailPage() {
           onConfirm={() => removeView.mutate(confirmingDeleteView)}
         />
       )}
-      {deletingPhoto && <ConfirmDialog title="¿Quitar esta foto?" message="La foto se eliminará definitivamente de esta vista." confirmLabel="Quitar foto" pending={removePhoto.isPending} onClose={() => setDeletingPhoto(undefined)} onConfirm={() => removePhoto.mutate(deletingPhoto.id)} />}
     </section>
   );
 }
@@ -407,7 +396,7 @@ function ReviewCard({
   onEdit: () => void;
 }) {
   const own = review.author === session.get()?.username;
-  const author = review.author || "autor desconocido";
+   const author = review.author;
   const initial = author[0].toUpperCase();
   const authorLabel =
     review.author === "tomas"
@@ -445,6 +434,7 @@ function ReviewCard({
       <p className="film-review-comment">
         {review.comment || "Sin comentario todavía."}
       </p>
+      {review.favoriteCharacter && <small>Personaje favorito: {review.favoriteCharacter}</small>}
       <small>Vista #{visitNumber}</small>
     </article>
   );

@@ -5,12 +5,14 @@ import { AdaptivePhoto } from "../../components/ui/AdaptivePhoto";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { ExperienceGallery } from "../../components/ui/ExperienceGallery";
 import { StarRating } from "../../components/ui/StarRating";
+import { session } from "../../lib/api";
 import { showNotice } from "../../lib/flash";
-import type { ExperiencePhoto, PlaceVisit, PlaceVisitReview, PlaceVisitSummary } from "../../types/domain";
+import type { ExperiencePhoto, PlaceReview, PlaceVisit, PlaceVisitReview, PlaceVisitSummary } from "../../types/domain";
 import { deleteVisitPhoto, getVisit, getVisits, setVisitCover, uploadVisitPhoto } from "../items/items";
 import { VisitForm } from "../items/VisitForm";
 import { VisitReviewForm } from "../items/VisitReviewForm";
 import { PlaceForm } from "./PlaceForm";
+import { PlaceReviewForm } from "./PlaceReviewForm";
 import { deletePlace, getPlace } from "./places";
 
 const dateLabel = (date: string) =>
@@ -23,16 +25,9 @@ const mapsSearch = (address?: string | null) =>
   address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
     : undefined;
-const venueMetrics = [
+const visitMetrics = [
   ["taste", "Sabor"],
   ["price", "Precio"],
-  ["location", "Ubicación"],
-  ["heating", "Calefacción"],
-  ["bathrooms", "Baños"],
-  ["exterior", "Exterior"],
-  ["seating", "Asientos"],
-  ["service", "Atención"],
-  ["ambiance", "Ambiente"],
 ] as const;
 
 export function PlaceDetailPage() {
@@ -44,6 +39,7 @@ export function PlaceDetailPage() {
   const [editingVisit, setEditingVisit] = useState<PlaceVisitSummary | null | undefined>();
   const [selectedVisitId, setSelectedVisitId] = useState<number>();
   const [reviewing, setReviewing] = useState<PlaceVisitReview | null>();
+  const [reviewingPlace, setReviewingPlace] = useState(false);
   const [deletingPhoto, setDeletingPhoto] = useState<ExperiencePhoto>();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const place = useQuery({ queryKey: ["place", id], queryFn: () => getPlace(id), enabled: validId });
@@ -163,6 +159,13 @@ export function PlaceDetailPage() {
         <div><span>Sabor</span><strong>{venue.tasteAverage ? venue.tasteAverage.toFixed(1) : "-"}</strong></div>
         <div><span>Precio y lugar</span><strong>{venue.priceAverage || venue.venueAverage ? Math.max(venue.priceAverage, venue.venueAverage).toFixed(1) : "-"}</strong></div>
       </section>
+      <section className="reviews-section place-venue-reviews">
+        <div className="section-title">
+          <div><p className="eyebrow">EL LUGAR</p><h2>Espacio y atención</h2></div>
+          <button className="secondary-button" type="button" onClick={() => setReviewingPlace(true)}>✎ Opinar del lugar</button>
+        </div>
+        {venue.reviews.length ? <div className="review-columns">{venue.reviews.map((review) => <VenueReview key={review.author} review={review} />)}</div> : <p className="empty-state">Todavía no hay opiniones sobre el lugar.</p>}
+      </section>
       <section className="watch-counter">
         <div>
           <p className="eyebrow">HISTORIAL DE VISITAS</p>
@@ -194,6 +197,7 @@ export function PlaceDetailPage() {
       )}
       {!visitList.length && <p className="empty-state">Todavía no hay visitas. La primera fecha abre la galería y las reseñas de esta experiencia.</p>}
       {editingPlace && <PlaceForm place={venue} onClose={() => setEditingPlace(false)} />}
+      {reviewingPlace && <PlaceReviewForm place={venue} review={venue.reviews.find((review) => review.author === session.get()?.username)} onClose={() => setReviewingPlace(false)} />}
       {editingVisit !== undefined && <VisitForm placeId={venue.id} visit={editingVisit ?? undefined} onClose={() => setEditingVisit(undefined)} onSaved={(saved) => setSelectedVisitId(saved.id)} onDeleted={() => setSelectedVisitId(undefined)} />}
       {reviewing !== undefined && current && <VisitReviewForm placeId={venue.id} visit={current} review={reviewing ?? undefined} onClose={() => setReviewing(undefined)} />}
       {confirmingDelete && <ConfirmDialog title="¿Borrar este lugar?" message={removePlace.error ? removePlace.error.message : "Se archivará el lugar y se conservarán sus visitas."} confirmLabel="Borrar lugar" pending={removePlace.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => removePlace.mutate()} />}
@@ -237,7 +241,7 @@ function VisitExperience({
               </div>
               <p>{review.comment || "Sin comentario."}</p>
               <div className="place-review__metrics">
-                {venueMetrics.map(([key, label]) => (
+                {visitMetrics.map(([key, label]) => (
                   <span key={key}>
                     <b>{label}</b>
                     <strong>{review[key] ?? "-"}</strong>
@@ -251,4 +255,11 @@ function VisitExperience({
       ) : <p className="empty-state">Todavía no hay reseñas para esta visita.</p>}
     </div>
   );
+}
+
+function VenueReview({ review }: { review: PlaceReview }) {
+  const metrics = [
+    ["location", "Ubicación"], ["heating", "Calefacción"], ["bathrooms", "Baños"], ["exterior", "Exterior"], ["seating", "Asientos"], ["service", "Atención"], ["ambiance", "Ambiente"],
+  ] as const;
+  return <article className="place-review"><div className="place-review__heading"><h3>Opinión de {review.author}</h3></div>{review.comment && <p>{review.comment}</p>}<div className="place-review__metrics">{metrics.map(([key, label]) => <span key={key}><b>{label}</b><strong>{review[key] ?? "-"}</strong></span>)}</div></article>;
 }

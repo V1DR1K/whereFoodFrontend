@@ -19,10 +19,9 @@ const dateLabel = (value?: string) =>
       day: "2-digit",
       month: "long",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(value))
+    }).format(new Date(`${value}T12:00:00`))
     : "Sin fecha";
+const dayLabel = { MONDAY: "Lunes", TUESDAY: "Martes", WEDNESDAY: "Miércoles", THURSDAY: "Jueves", FRIDAY: "Viernes", SATURDAY: "Sábado", SUNDAY: "Domingo" } as const;
 
 export function FunVenueDetailPage() {
   const id = Number(useParams().id);
@@ -104,7 +103,7 @@ export function FunVenueDetailPage() {
           <p className="fun-plan-date">📍 {value.address}</p>
           <p className="byline">Creada por {value.createdBy} · editada por {value.updatedBy}</p>
         </div>
-        <div className="detail-actions">
+        <div className="detail-actions detail-actions--triplet">
           <button className="main-button" type="button" onClick={() => setEditingVisit(null)}>＋ Registrar salida</button>
           <button className="secondary-button" type="button" onClick={() => setEditing(true)}>✎ Editar actividad</button>
           <button className="danger-button" type="button" onClick={() => setConfirmingDelete(true)}>× Borrar actividad</button>
@@ -114,7 +113,7 @@ export function FunVenueDetailPage() {
         <div className="fun-detail-panel">
           <p className="eyebrow">HORARIOS</p>
           <h2>Cuándo se puede ir</h2>
-          {value.schedules.length ? <ul>{value.schedules.map((schedule) => <li key={`${schedule.dayOfWeek}-${schedule.opensAt}`}>{schedule.dayOfWeek}: {schedule.opensAt} a {schedule.closesAt}</li>)}</ul> : <p className="muted">No cargaron horarios para esta actividad.</p>}
+          {value.schedules.length ? <div className="fun-hours">{value.schedules.map((schedule) => <div key={`${schedule.dayOfWeek}-${schedule.opensAt}`}><strong>{dayLabel[schedule.dayOfWeek]}</strong><span>{schedule.opensAt} a {schedule.closesAt}</span></div>)}</div> : <p className="muted">No cargaron horarios para esta actividad.</p>}
         </div>
         <div className="fun-detail-panel"><p className="eyebrow">HISTORIAL</p><h2>{list.length} salida{list.length === 1 ? "" : "s"}</h2><p className="muted">Cada fecha conserva su propia galería y reseñas.</p></div>
       </section>

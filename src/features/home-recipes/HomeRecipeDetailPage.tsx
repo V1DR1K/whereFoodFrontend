@@ -2,15 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { ExperienceGallery } from "../../components/ui/ExperienceGallery";
 import { StarRating } from "../../components/ui/StarRating";
 import { mediaUrl } from "../../lib/api";
 import { showNotice } from "../../lib/flash";
-import type { Cooking, CookingReview, ExperiencePhoto } from "../../types/domain";
+import type { Cooking, CookingReview } from "../../types/domain";
 import { CookingForm } from "./CookingForm";
 import { CookingReviewForm } from "./CookingReviewForm";
 import { RecipeForm } from "./RecipeForm";
-import { deleteCookingPhoto, deleteRecipe, getCookings, getRecipe, setCookingCover, uploadCookingPhoto } from "./homeRecipes";
+import { deleteRecipe, getCookings, getRecipe } from "./homeRecipes";
 
 const dateLabel = (date: string) =>
   new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "long", year: "numeric" })
@@ -29,7 +28,6 @@ export function HomeRecipeDetailPage() {
   const [editingCooking, setEditingCooking] = useState<Cooking | null | undefined>();
   const [selectedCookingId, setSelectedCookingId] = useState<number>();
   const [reviewing, setReviewing] = useState<CookingReview | null>();
-  const [deletingPhoto, setDeletingPhoto] = useState<ExperiencePhoto>();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const recipe = useQuery({ queryKey: ["recipe", id], queryFn: () => getRecipe(id), enabled: validId });
   const cookings = useQuery({ queryKey: ["cookings", id], queryFn: () => getCookings({ recipeId: id }), enabled: validId });
@@ -46,31 +44,6 @@ export function HomeRecipeDetailPage() {
       await qc.invalidateQueries({ queryKey: ["recipes"] });
       showNotice("Eliminamos la receta.");
       navigate("/how-cook");
-    },
-  });
-  const uploadPhotos = useMutation({
-    mutationFn: async (files: File[]) => {
-      if (!current) return;
-      for (const file of files) await uploadCookingPhoto(current.id, file);
-    },
-    onSuccess: async () => {
-      await invalidate();
-      showNotice("Agregamos las fotos a esta cocinada.");
-    },
-  });
-  const cover = useMutation({
-    mutationFn: (photoId: number) => setCookingCover(current!.id, photoId),
-    onSuccess: async () => {
-      await invalidate();
-      showNotice("Actualizamos la portada.");
-    },
-  });
-  const removePhoto = useMutation({
-    mutationFn: (photoId: number) => deleteCookingPhoto(photoId),
-    onSuccess: async () => {
-      await invalidate();
-      showNotice("Quitamos la foto.");
-      setDeletingPhoto(undefined);
     },
   });
 
@@ -125,35 +98,27 @@ export function HomeRecipeDetailPage() {
               <button className="secondary-button" type="button" onClick={() => setReviewing(null)}>＋ Agregar reseña</button>
             </>}
           </div>
-          {current && <CookingExperience cooking={current} onUpload={(files) => uploadPhotos.mutateAsync(files)} onSetCover={(photo) => cover.mutate(photo.id)} onDeletePhoto={setDeletingPhoto} onEditReview={setReviewing} />}
-        </> : <p className="empty-state">Todavía no cocinaron esta receta. Registren la primera vez para abrir su galería y reseñas.</p>}
+          {current && <CookingExperience cooking={current} onEditReview={setReviewing} />}
+        </> : <p className="empty-state">Todavía no cocinaron esta receta. Registren la primera vez para guardar su historial y reseñas.</p>}
       </section>
       {editingRecipe && <RecipeForm recipe={value} onClose={() => setEditingRecipe(false)} />}
       {editingCooking !== undefined && <CookingForm recipe={value} cooking={editingCooking ?? undefined} onClose={() => setEditingCooking(undefined)} onSaved={(saved) => setSelectedCookingId(saved.id)} />}
       {reviewing !== undefined && current && <CookingReviewForm cooking={current} review={reviewing ?? undefined} onClose={() => setReviewing(undefined)} />}
       {confirmingDelete && <ConfirmDialog title="¿Borrar esta receta?" message={removeRecipe.error ? removeRecipe.error.message : "Solo podés borrarla si no tiene cocinadas registradas."} confirmLabel="Borrar receta" pending={removeRecipe.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => removeRecipe.mutate()} />}
-      {deletingPhoto && <ConfirmDialog title="¿Quitar esta foto?" message="La foto se eliminará definitivamente de esta cocinada." confirmLabel="Quitar foto" pending={removePhoto.isPending} onClose={() => setDeletingPhoto(undefined)} onConfirm={() => removePhoto.mutate(deletingPhoto.id)} />}
     </section>
   );
 }
 
 function CookingExperience({
   cooking,
-  onUpload,
-  onSetCover,
-  onDeletePhoto,
   onEditReview,
 }: {
   cooking: Cooking;
-  onUpload: (files: File[]) => Promise<unknown>;
-  onSetCover: (photo: ExperiencePhoto) => void;
-  onDeletePhoto: (photo: ExperiencePhoto) => void;
   onEditReview: (review: CookingReview | null) => void;
 }) {
   return (
     <div className="experience-detail">
-      <p className="muted">{dateLabel(cooking.cookedOn)} · {mealName(cooking.mealType)} · {cooking.home === "TOMAS" ? "Casa de Tomás" : "Casa de Avril"} · {cooking.servings} porciones. Registrada por {cooking.createdBy}.</p>
-      <ExperienceGallery accentLabel="COCINADA" emptyIcon="🍲" name={`${cooking.recipe.name}, ${dateLabel(cooking.cookedOn)}`} photos={cooking.photos} coverPhotoId={cooking.coverPhoto?.id} onUpload={async (files) => { await onUpload(files); }} onSetCover={onSetCover} onDelete={onDeletePhoto} />
+      <p className="muted">{dateLabel(cooking.cookedOn)} · {mealName(cooking.mealType)} · {cooking.home === "TOMAS" ? "🏠 Casa de Tomás" : "🏡 Casa de Avril"} · {cooking.servings} porciones. Registrada por {cooking.createdBy}.</p>
       <section className="reviews-section">
         <div className="section-title section-title--compact"><div><p className="eyebrow">RESEÑAS</p><h2>Cómo salió</h2></div><strong>{cooking.reviews.length}</strong></div>
         {cooking.reviews.length ? <div className="home-recipe-review-columns">{cooking.reviews.map((review) => <article className="home-recipe-review" key={review.id}><div><span className="review-avatar">{review.author[0]?.toUpperCase()}</span><h3>Reseña de {review.author}</h3><button className="secondary-button" type="button" onClick={() => onEditReview(review)}>✎ Editar</button></div><StarRating label={`Puntuación de ${review.author}`} value={review.rating} /><p>{review.comment || "Sin comentario."}</p><small>Creada por {review.author} · editada por {review.updatedBy}</small></article>)}</div> : <p className="empty-state">Todavía no hay reseñas para esta cocinada.</p>}

@@ -483,13 +483,108 @@
   box-shadow: 3px 3px 0 #742f2a;
 }
 
+.fun-detail .fun-hours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fun-detail .fun-hours > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, #ff8bca 48%, #3a1f46);
+  border-radius: 999px;
+  background: color-mix(in srgb, #ff8bca 12%, #21182b);
+  color: #ffe9f5;
+  font-size: 12px;
+}
+
+.fun-detail .fun-hours strong {
+  color: #ff9cd4;
+}
+
+.fun-detail .fun-hours span {
+  color: #f4dce9;
+}
+
+/* Creation and editing modals keep alternate actions comfortably tappable. */
+.modal form .secondary-button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-recipe-home-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.home-recipe-home-filters button {
+  min-height: 40px;
+  border: 1px solid #4c5930;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #222d1a;
+  color: #e8f3b0;
+  font-weight: 700;
+}
+
+.home-recipe-home-filters button.selected {
+  border-color: #d4ef55;
+  background: color-mix(in srgb, #d4ef55 16%, #222d1a);
+  color: #f4ffc5;
+}
+
+.film-detail__head .detail-actions--triplet .main-button {
+  display: inline-flex;
+}
+
 @media (max-width: 540px) {
-  .food-shell .detail-actions--food {
-    grid-template-columns: 1fr;
+  .detail-actions--triplet {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
     width: 100%;
   }
 
-  .food-shell .detail-actions--food .detail-actions__primary { order: -1; }
+  .detail-actions--triplet .main-button,
+  .detail-actions--triplet .secondary-button {
+    grid-column: auto !important;
+    order: initial !important;
+  }
+
+  .detail-actions--triplet .danger-button {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+  }
+
+  .fun-detail__head .detail-actions--triplet {
+    order: 3;
+  }
+
+  .fun-detail-grid {
+    order: 4;
+  }
+}
+
+@media (max-width: 540px) {
+  .food-shell .detail-actions--food {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .food-shell .detail-actions--food .danger-button { grid-column: 1 / -1; }
 
   .food-shell .place-review { padding: 12px; }
 

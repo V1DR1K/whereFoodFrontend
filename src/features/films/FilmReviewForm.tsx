@@ -13,10 +13,11 @@ const dateLabel = (date: string) => new Intl.DateTimeFormat('es-AR', { day: '2-d
 export function FilmReviewForm({ film, view, review, onClose }: { film: Film; view: FilmView; review?: FilmReview; onClose: () => void }) {
   const qc = useQueryClient();
   const [rating, setRating] = useState(review?.rating ?? 4);
+  const [favoriteCharacter, setFavoriteCharacter] = useState(review?.favoriteCharacter ?? "");
   const [metrics, setMetrics] = useState<Record<string, number>>(() => Object.fromEntries(filmReviewMetrics.map(metric => [metric.key, review?.metrics?.[metric.key] ?? 3])));
   const mutation = useMutation({
     mutationFn: (form: FormData) => {
-      const input = { rating, comment: String(form.get('comment')) || undefined, metrics };
+      const input = { rating, comment: String(form.get('comment')) || undefined, favoriteCharacter: favoriteCharacter || undefined, metrics };
       return review ? updateFilmReview(film.id, review.id, input) : saveFilmReview(film.id, view.id, input);
     },
     onSuccess: async () => {
@@ -32,6 +33,7 @@ export function FilmReviewForm({ film, view, review, onClose }: { film: Film; vi
     <h2>{film.tmdb?.title ?? film.title}</h2>
     <p className="muted">Vista del {dateLabel(view.watchedOn)}</p>
     <label className="film-rating">¿Cuánto te gustó?<StarRating label="Puntuación de la película" value={rating} onChange={setRating} /></label>
+    {!!film.tmdb?.cast.filter(member => member.character).length && <label>Personaje favorito<select value={favoriteCharacter} onChange={event => setFavoriteCharacter(event.target.value)}><option value="">No elegir</option>{film.tmdb.cast.filter(member => member.character).map(member => <option key={`${member.name}-${member.character}`} value={member.character}>{member.character} · {member.name}</option>)}</select></label>}
     <fieldset className="film-metric-fields"><legend>¿Cómo fue la película?</legend>{filmReviewMetrics.map(metric => <div className="film-metric-field" key={metric.key}><div><strong>{metric.label}</strong><small>{metricLevel(metric.levels, metrics[metric.key])}</small></div><SegmentedLevel label={metric.label} levels={metric.levels} value={metrics[metric.key]} onChange={value => setMetrics(current => ({ ...current, [metric.key]: value }))} /></div>)}</fieldset>
     <label>Reseña<textarea name="comment" defaultValue={review?.comment} placeholder="¿Qué te pareció?" /></label>
     <button className="main-button" disabled={mutation.isPending || remove.isPending}>{mutation.isPending ? 'Guardando…' : review ? '✓ Guardar reseña' : '＋ Agregar reseña'}</button>
