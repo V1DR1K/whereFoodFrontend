@@ -1,24 +1,29 @@
 import { api } from '../../lib/api';
-import type { FunCategory, FunPlan, FunReview, Slice } from '../../types/domain';
+import type { Activity, ActivityReview, ActivityVisit, FunCategory } from '../../types/domain';
 
 export type FunCategoryInput = { parentId?: number; name: string; icon: string; active: boolean };
-export type FunPlanInput = { name: string; address: string; scheduledAt: string; categoryId: number; subcategoryId: number };
+export type ActivityInput = { name: string; address: string; categoryId: number; subcategoryId: number; schedules: { dayOfWeek: string; opensAt: string; closesAt: string }[] };
+export type ActivityVisitInput = { scheduledAt?: string };
 
 export const getFunCategories = () => api<FunCategory[]>('/why-fun/categories');
 export const getAllFunCategories = () => api<FunCategory[]>('/why-fun/categories/all');
 export const saveFunCategory = (input: FunCategoryInput, id?: number) => api<FunCategory>(`/why-fun/categories${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });
-export const getFunPlans = (filters: { categoryId?: number; subcategoryId?: number; timeline?: 'UPCOMING' | 'PAST' | 'UNSCHEDULED'; cursor?: number } = {}) => {
- const query = new URLSearchParams({ size: '12' });
+export const getActivities = (filters: { categoryId?: number; subcategoryId?: number } = {}) => {
+ const query = new URLSearchParams();
  if (filters.categoryId) query.set('categoryId', String(filters.categoryId));
  if (filters.subcategoryId) query.set('subcategoryId', String(filters.subcategoryId));
- if (filters.timeline) query.set('timeline', filters.timeline);
- if (filters.cursor) query.set('cursor', String(filters.cursor));
- return api<Slice<FunPlan>>(`/why-fun/plans?${query}`);
+ return api<Activity[]>(`/why-fun/activities${query.size ? `?${query}` : ''}`);
 };
-export const getFunPlan = (id: number) => api<FunPlan>(`/why-fun/plans/${id}`);
-export const saveFunPlan = (input: FunPlanInput, id?: number) => api<FunPlan>(`/why-fun/plans${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });
-export const deleteFunPlan = (id: number) => api<void>(`/why-fun/plans/${id}`, { method: 'DELETE' });
-export const uploadFunPhoto = (id: number, file: File) => { const data = new FormData(); data.append('file', file); return api<FunPlan>(`/why-fun/plans/${id}/photos`, { method: 'POST', body: data }); };
-export const setFunCover = (planId: number, photoId: number) => api<FunPlan>(`/why-fun/plans/${planId}/cover/${photoId}`, { method: 'PUT' });
-export const deleteFunPhoto = (id: number) => api<void>(`/why-fun/photos/${id}`, { method: 'DELETE' });
-export const saveFunReview = (id: number, input: Pick<FunReview, 'rating' | 'comment'>) => api<FunReview>(`/why-fun/plans/${id}/review`, { method: 'PUT', body: JSON.stringify(input) });
+export const getActivity = (id: number) => api<Activity>(`/why-fun/activities/${id}`);
+export const saveActivity = (input: ActivityInput, id?: number) => api<Activity>(`/why-fun/activities${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });
+export const deleteActivity = (id: number) => api<void>(`/why-fun/activities/${id}`, { method: 'DELETE' });
+export const getActivityVisits = (activityId: number) => api<ActivityVisit[]>(`/why-fun/activities/${activityId}/visits`);
+export const createActivityVisit = (activityId: number, input: ActivityVisitInput) => api<ActivityVisit>(`/why-fun/activities/${activityId}/visits`, { method: 'POST', body: JSON.stringify(input) });
+export const updateActivityVisit = (visitId: number, input: ActivityVisitInput) => api<ActivityVisit>(`/why-fun/activity-visits/${visitId}`, { method: 'PUT', body: JSON.stringify(input) });
+export const deleteActivityVisit = (visitId: number) => api<void>(`/why-fun/activity-visits/${visitId}`, { method: 'DELETE' });
+export const uploadActivityPhoto = (visitId: number, file: File) => { const data = new FormData(); data.append('file', file); return api<ActivityVisit>(`/why-fun/activity-visits/${visitId}/photos`, { method: 'POST', body: data }); };
+export const setActivityCover = (visitId: number, photoId: number) => api<ActivityVisit>(`/why-fun/activity-visits/${visitId}/cover/${photoId}`, { method: 'PUT' });
+export const deleteActivityPhoto = (id: number) => api<void>(`/why-fun/activity-visit-photos/${id}`, { method: 'DELETE' });
+export const createActivityReview = (visitId: number, input: Pick<ActivityReview, 'rating' | 'comment'>) => api<ActivityReview>(`/why-fun/activity-visits/${visitId}/reviews`, { method: 'POST', body: JSON.stringify(input) });
+export const updateActivityReview = (reviewId: number, input: Pick<ActivityReview, 'rating' | 'comment'>) => api<ActivityReview>(`/why-fun/activity-visit-reviews/${reviewId}`, { method: 'PUT', body: JSON.stringify(input) });
+export const deleteActivityReview = (reviewId: number) => api<void>(`/why-fun/activity-visit-reviews/${reviewId}`, { method: 'DELETE' });

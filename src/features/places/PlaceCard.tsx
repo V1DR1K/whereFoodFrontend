@@ -64,7 +64,7 @@ export function PlaceCard({ place }: { place: Place }) {
           )}
           <footer>
             <span>
-              {pending ? "📌 En la lista" : "💬 " + place.itemCount + " ítems"}
+              {pending ? "📌 En la lista" : "★ Visitas y reseñas"}
             </span>
             <span>Ver ficha →</span>
           </footer>

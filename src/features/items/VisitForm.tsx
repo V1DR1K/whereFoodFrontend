@@ -23,7 +23,7 @@ export function VisitForm({ placeId, visit, onClose, onSaved, onDeleted }: { pla
     onSuccess: async saved => {
       await invalidate(visit?.id);
       onSaved(saved);
-      showNotice(visit ? "Actualizamos la fecha de la visita." : "Visita registrada. Ahora podés sumar los ítems que pidieron.");
+      showNotice(visit ? "Actualizamos la fecha de la visita." : "Visita registrada. Ahora pueden sumar fotos y reseñas.");
       onClose();
     },
   });
@@ -31,13 +31,13 @@ export function VisitForm({ placeId, visit, onClose, onSaved, onDeleted }: { pla
     mutationFn: () => deleteVisit(visit!.id),
     onSuccess: async () => {
       await invalidate(visit!.id);
-      showNotice("Eliminamos la visita y sus ítems asociados.");
+      showNotice("Eliminamos la visita, sus fotos y sus reseñas.");
       onDeleted?.();
       onClose();
     },
   });
 
-  if (confirmingDelete && visit) return <ConfirmDialog title="¿Borrar esta visita?" message="También se eliminarán los ítems y reseñas cargados en esta fecha." confirmLabel="Borrar visita" pending={remove.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => remove.mutate()} />;
+  if (confirmingDelete && visit) return <ConfirmDialog title="¿Borrar esta visita?" message="También se eliminarán las fotos y reseñas cargadas en esta fecha." confirmLabel="Borrar visita" pending={remove.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => remove.mutate()} />;
 
-  return <Modal onClose={onClose} confirmDiscard pending={mutation.isPending || remove.isPending}><form onSubmit={event => { event.preventDefault(); mutation.mutate(); }}><p className="eyebrow">{visit ? "EDITAR VISITA" : "NUEVA VISITA"}</p><h2>{visit ? "¿Qué día fueron?" : "Registren la visita"}</h2><p className="muted">La visita se guarda por separado. Después pueden añadir todos los ítems que pidieron.</p><label>Fecha de visita<input type="date" required max={today()} value={visitedOn} onChange={event => setVisitedOn(event.target.value)} /></label><button className="action-button" disabled={mutation.isPending || remove.isPending}>{mutation.isPending ? "Guardando…" : visit ? "Guardar visita" : "Registrar visita"} 🍽️</button>{visit && <button className="action-button action-button--delete" type="button" disabled={mutation.isPending || remove.isPending} onClick={() => setConfirmingDelete(true)}>Borrar visita</button>}{(mutation.error || remove.error) && <p className="form-error">{(mutation.error || remove.error)!.message}</p>}</form></Modal>;
+  return <Modal onClose={onClose} confirmDiscard pending={mutation.isPending || remove.isPending}><form onSubmit={event => { event.preventDefault(); mutation.mutate(); }}><p className="eyebrow">{visit ? "EDITAR VISITA" : "NUEVA VISITA"}</p><h2>{visit ? "¿Qué día fueron?" : "Registren la visita"}</h2><p className="muted">Las fotos y reseñas quedan guardadas en esta fecha.</p><label>Fecha de visita<input type="date" required max={today()} value={visitedOn} onChange={event => setVisitedOn(event.target.value)} /></label><button className="main-button" disabled={mutation.isPending || remove.isPending}>{mutation.isPending ? "Guardando…" : visit ? "✓ Guardar visita" : "＋ Registrar visita"}</button>{visit && <button className="danger-button" type="button" disabled={mutation.isPending || remove.isPending} onClick={() => setConfirmingDelete(true)}>× Borrar visita</button>}{(mutation.error || remove.error) && <p className="form-error">{(mutation.error || remove.error)!.message}</p>}</form></Modal>;
 }

@@ -1,34 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { ExperienceGallery } from "../../components/ui/ExperienceGallery";
 import { StarRating } from "../../components/ui/StarRating";
 import { showNotice } from "../../lib/flash";
-import { mediaUrl, session } from "../../lib/api";
-import type { FunPhoto, FunPlan } from "../../types/domain";
-import { FunPhotoGallery } from "./FunPhotoGallery";
-import { FunVenueForm } from "./FunVenueForm";
-import {
-  deleteFunPhoto,
-  deleteFunPlan,
-  getFunPlan,
-  setFunCover,
-} from "./whyFun";
+import type { ActivityReview, ActivityVisit, ExperiencePhoto } from "../../types/domain";
+import { ActivityForm } from "./ActivityForm";
+import { ActivityVisitForm } from "./ActivityVisitForm";
+import { ActivityReviewForm } from "./ActivityReviewForm";
+import { deleteActivity, deleteActivityPhoto, getActivity, getActivityVisits, setActivityCover, uploadActivityPhoto } from "./whyFun";
 
-const mapsSearch = (address: string) =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-const dateLabel = (value?: string) =>
-  value
-    ? new Intl.DateTimeFormat("es-AR", {
-        weekday: "long",
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date(value))
-    : "Todavía no tiene fecha";
-const couple = ["tomas", "avril"];
+const dateLabel = (value?: string) => value ? new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "Sin fecha";
 
 export function FunVenueDetailPage() {
   const id = Number(useParams().id);
@@ -36,291 +19,27 @@ export function FunVenueDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [reviewing, setReviewing] = useState(false);
+  const [editingVisit, setEditingVisit] = useState<ActivityVisit | null | undefined>();
+  const [selectedVisitId, setSelectedVisitId] = useState<number>();
+  const [reviewing, setReviewing] = useState<ActivityReview | null>();
+  const [deletingPhoto, setDeletingPhoto] = useState<ExperiencePhoto>();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deletingPhoto, setDeletingPhoto] = useState<FunPhoto>();
-  const planQuery = useQuery({
-    queryKey: ["fun-plan", id],
-    queryFn: () => getFunPlan(id),
-    enabled: validId,
-  });
-  const invalidate = () =>
-    Promise.all([
-      qc.invalidateQueries({ queryKey: ["fun-plans"] }),
-      qc.invalidateQueries({ queryKey: ["fun-plan", id] }),
-    ]);
-  const removePlan = useMutation({
-    mutationFn: () => deleteFunPlan(id),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["fun-plans"] });
-      showNotice("Eliminamos la salida.");
-      navigate("/why-fun");
-    },
-  });
-  const removePhoto = useMutation({
-    mutationFn: (photoId: number) => deleteFunPhoto(photoId),
-    onSuccess: async () => {
-      await invalidate();
-      showNotice("Eliminamos la foto.");
-      setDeletingPhoto(undefined);
-    },
-  });
-  const cover = useMutation({
-    mutationFn: (photoId: number) => setFunCover(id, photoId),
-    onSuccess: async () => {
-      await invalidate();
-      showNotice("Actualizamos la foto de portada.");
-    },
-  });
-  if (
-    !validId ||
-    planQuery.isError ||
-    (!planQuery.isLoading && !planQuery.data)
-  )
-    return (
-      <section className="fun-detail">
-        <Link to="/why-fun">← Volver a WhyFun</Link>
-        <p className="form-error">
-          No pudimos abrir esta salida. Probá nuevamente desde la lista.
-        </p>
-      </section>
-    );
-  if (planQuery.isLoading) return <p>Cargando salida…</p>;
-  const plan = planQuery.data!;
-  const username = session.get()?.username;
-  const canManagePlan = session.get()?.role === "ADMIN" || plan.author === username;
-  const review = plan.reviews.find((value) => value.author === username);
-  const hasOccurred = Boolean(
-    plan.scheduledAt && new Date(plan.scheduledAt) <= new Date(),
-  );
-  return (
-    <section className="fun-detail">
-      <Link to="/why-fun">← Volver a WhyFun</Link>
-      <div className="fun-detail__cover">
-        {plan.coverPhoto ? (
-          <img
-            src={mediaUrl(plan.coverPhoto.url)}
-            alt={`Foto de ${plan.name}`}
-          />
-        ) : (
-          <span>{plan.subcategory.icon}</span>
-        )}
-      </div>
-      <div className="fun-detail__head">
-        <div className="fun-detail__summary">
-          <p className="eyebrow">
-            {hasOccurred
-              ? "SALIDA REALIZADA"
-              : plan.scheduledAt
-                ? "PRÓXIMA SALIDA"
-                : "FALTA FECHA"}
-          </p>
-          <h1>{plan.name}</h1>
-          <div className="fun-detail__meta">
-            <p className="eyebrow">
-              {plan.category.icon} {plan.category.name} ·{" "}
-              {plan.subcategory.icon} {plan.subcategory.name}
-            </p>
-            <p className="fun-plan-date">🗓️ {dateLabel(plan.scheduledAt)}</p>
-            <a
-              className="address-link"
-              href={mapsSearch(plan.address)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              📍 {plan.address} ↗
-            </a>
-            {plan.reviewCount > 0 && (
-              <p className="fun-detail-rating">
-                <strong>{plan.rating.toFixed(1)} ★</strong> Promedio de
-                opiniones de esta salida
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="detail-actions">
-          {canManagePlan && (
-            <button
-              className="secondary-button"
-              onClick={() => setEditing(true)}
-            >
-              ✎ Editar salida
-            </button>
-          )}
-          {hasOccurred && (
-            <button className="main-button" onClick={() => setReviewing(true)}>
-              {review ? "✎ Editar opinión" : "★ Opinar sobre la salida"}
-            </button>
-          )}
-          {canManagePlan && (
-            <button
-              className="text-button"
-              onClick={() => setConfirmingDelete(true)}
-            >
-              Borrar salida
-            </button>
-          )}
-        </div>
-      </div>
-      <section className="fun-detail-grid">
-        <div className="fun-detail-panel">
-          <p className="eyebrow">CUÁNDO</p>
-          <h2>El plan</h2>
-          <p className="fun-plan-date fun-plan-date--large">
-            {dateLabel(plan.scheduledAt)}
-          </p>
-          <p className="muted">
-            Cada salida queda guardada por separado para que puedan repetir el
-            lugar otro día sin perder el historial.
-          </p>
-        </div>
-        <div className="fun-detail-panel">
-          <p className="eyebrow">OPINIONES DE ESTA SALIDA</p>
-          <h2>Cómo la pasaron</h2>
-          {plan.reviewCount ? (
-            <div className="fun-rating-summary">
-              <strong>{plan.rating.toFixed(1)}</strong>
-              <StarRating
-                label="Promedio de opiniones"
-                value={Math.round(plan.rating)}
-              />
-              <span>{plan.reviewCount} de 2 opiniones</span>
-            </div>
-          ) : (
-            <p className="muted">Todavía no hay opiniones de esta salida.</p>
-          )}
-        </div>
-      </section>
-      <section className="fun-gallery-section">
-        <div className="section-title">
-          <div>
-            <p className="eyebrow">FOTOS</p>
-            <h2>La salida</h2>
-          </div>
-          <strong>
-            {plan.photos.length} foto{plan.photos.length === 1 ? "" : "s"}
-          </strong>
-        </div>
-        {plan.photos.length ? (
-          <FunPhotoGallery
-            photos={plan.photos}
-            planName={plan.name}
-            coverPhotoId={plan.coverPhoto?.id}
-            onDelete={canManagePlan ? setDeletingPhoto : undefined}
-            onSetCover={canManagePlan ? (photo) => cover.mutate(photo.id) : undefined}
-          />
-        ) : (
-          <p className="empty-state">Todavía no hay fotos de esta salida.</p>
-        )}
-        {(removePhoto.error || cover.error) && (
-          <p className="form-error">
-            {(removePhoto.error || cover.error)!.message}
-          </p>
-        )}
-      </section>
-      <section className="reviews-section">
-        <div className="section-title">
-          <div>
-            <p className="eyebrow">OPINIONES DE ESTA SALIDA</p>
-            <h2>Tomás y Avril</h2>
-          </div>
-          <strong>{plan.reviewCount}/2</strong>
-        </div>
-        <div className="fun-review-columns">
-          {couple.map((author) => (
-            <ReviewCard
-              key={author}
-              plan={plan}
-              author={author}
-              currentUser={username}
-              onEdit={() => setReviewing(true)}
-            />
-          ))}
-        </div>
-      </section>
-      {editing && (
-        <FunVenueForm plan={plan} onClose={() => setEditing(false)} />
-      )}
-      {reviewing && (
-        <FunVenueForm
-          plan={plan}
-          reviewOnly
-          onClose={() => setReviewing(false)}
-        />
-      )}
-      {confirmingDelete && (
-        <ConfirmDialog
-          title="¿Borrar esta salida?"
-          message={
-            removePlan.error
-              ? removePlan.error.message
-              : "También se eliminarán sus fotos y opiniones."
-          }
-          confirmLabel="Borrar salida"
-          pending={removePlan.isPending}
-          onClose={() => setConfirmingDelete(false)}
-          onConfirm={() => removePlan.mutate()}
-        />
-      )}
-      {deletingPhoto && (
-        <ConfirmDialog
-          title="¿Quitar esta foto?"
-          message="La foto se eliminará definitivamente de la salida."
-          confirmLabel="Quitar foto"
-          pending={removePhoto.isPending}
-          onClose={() => setDeletingPhoto(undefined)}
-          onConfirm={() => removePhoto.mutate(deletingPhoto.id)}
-        />
-      )}
-    </section>
-  );
+  const activity = useQuery({ queryKey: ["activity", id], queryFn: () => getActivity(id), enabled: validId });
+  const visits = useQuery({ queryKey: ["activity-visits", id], queryFn: () => getActivityVisits(id), enabled: validId });
+  const list = visits.data ?? [];
+  const current = list.find((visit) => visit.id === selectedVisitId);
+  const invalidate = () => Promise.all([qc.invalidateQueries({ queryKey: ["activities"] }), qc.invalidateQueries({ queryKey: ["activity", id] }), qc.invalidateQueries({ queryKey: ["activity-visits", id] })]);
+  const removeActivity = useMutation({ mutationFn: () => deleteActivity(id), onSuccess: async () => { await qc.invalidateQueries({ queryKey: ["activities"] }); showNotice("Eliminamos la actividad y su historial."); navigate("/why-fun"); } });
+  const uploadPhotos = useMutation({ mutationFn: async (files: File[]) => { if (!current) return; for (const file of files) await uploadActivityPhoto(current.id, file); }, onSuccess: async () => { await invalidate(); showNotice("Agregamos las fotos a la salida."); } });
+  const cover = useMutation({ mutationFn: (photoId: number) => setActivityCover(current!.id, photoId), onSuccess: async () => { await invalidate(); showNotice("Actualizamos la portada."); } });
+  const removePhoto = useMutation({ mutationFn: (photoId: number) => deleteActivityPhoto(photoId), onSuccess: async () => { await invalidate(); showNotice("Quitamos la foto."); setDeletingPhoto(undefined); } });
+  useEffect(() => { if (list.length && !list.some((visit) => visit.id === selectedVisitId)) setSelectedVisitId(list[0].id); }, [list, selectedVisitId]);
+  if (!validId || activity.isError || (!activity.isLoading && !activity.data)) return <section className="fun-detail"><Link to="/why-fun">← Volver a WhyFun</Link><p className="form-error">No pudimos abrir esta actividad.</p></section>;
+  if (activity.isLoading) return <p className="muted" aria-busy="true">Cargando actividad…</p>;
+  const value = activity.data!;
+  return <section className="fun-detail"><Link to="/why-fun">← Volver a WhyFun</Link><div className="fun-detail__head"><div className="fun-detail__cover"><span>{value.subcategory.icon}</span></div><div className="fun-detail__summary"><p className="eyebrow">ACTIVIDAD COMPARTIDA · {value.category.icon} {value.category.name}</p><h1>{value.name}</h1><p className="fun-plan-date">📍 {value.address}</p><p className="byline">Creada por {value.createdBy} · editada por {value.updatedBy}</p></div><div className="detail-actions"><button className="secondary-button" type="button" onClick={() => setEditing(true)}>✎ Editar actividad</button><button className="main-button" type="button" onClick={() => setEditingVisit(null)}>＋ Registrar salida</button><button className="danger-button" type="button" onClick={() => setConfirmingDelete(true)}>× Borrar actividad</button></div></div><section className="fun-detail-grid"><div className="fun-detail-panel"><p className="eyebrow">HORARIOS</p><h2>Cuándo se puede ir</h2>{value.schedules.length ? <ul>{value.schedules.map((schedule) => <li key={`${schedule.dayOfWeek}-${schedule.opensAt}`}>{schedule.dayOfWeek}: {schedule.opensAt} a {schedule.closesAt}</li>)}</ul> : <p className="muted">No cargaron horarios para esta actividad.</p>}</div><div className="fun-detail-panel"><p className="eyebrow">HISTORIAL</p><h2>{list.length} salida{list.length === 1 ? "" : "s"}</h2><p className="muted">Cada fecha conserva su propia galería y reseñas.</p></div></section><section className="reviews-section"><div className="section-title"><div><p className="eyebrow">SALIDAS</p><h2>El historial</h2></div><strong>{list.length}</strong></div>{list.length ? <><div className="item-date-pager"><label>Elegir salida<select value={selectedVisitId ?? ""} onChange={(event) => setSelectedVisitId(Number(event.target.value))}>{list.map((visit) => <option key={visit.id} value={visit.id}>{dateLabel(visit.scheduledAt)} · {visit.createdBy}</option>)}</select></label>{current && <><button className="secondary-button" type="button" onClick={() => setEditingVisit(current)}>✎ Editar salida</button><button className="secondary-button" type="button" onClick={() => setReviewing(null)}>＋ Agregar reseña</button></>}</div>{current && <><p className="muted">Salida registrada por {current.createdBy}; editada por {current.updatedBy}.</p><ExperienceGallery accentLabel="SALIDA" emptyIcon="🎲" name={`${value.name}, ${dateLabel(current.scheduledAt)}`} photos={current.photos} coverPhotoId={current.coverPhoto?.id} onUpload={(files) => uploadPhotos.mutateAsync(files)} onSetCover={(photo) => cover.mutate(photo.id)} onDelete={setDeletingPhoto} /><ReviewList reviews={current.reviews} onEdit={setReviewing} /></>}</> : <p className="empty-state">Todavía no registraron una salida para esta actividad.</p>}</section>{editing && <ActivityForm activity={value} onClose={() => setEditing(false)} />}{editingVisit !== undefined && <ActivityVisitForm activity={value} visit={editingVisit ?? undefined} onClose={() => setEditingVisit(undefined)} onSaved={(saved) => setSelectedVisitId(saved.id)} />}{reviewing !== undefined && current && <ActivityReviewForm activityId={value.id} visit={current} review={reviewing ?? undefined} onClose={() => setReviewing(undefined)} />}{confirmingDelete && <ConfirmDialog title="¿Borrar esta actividad?" message={removeActivity.error ? removeActivity.error.message : "También se eliminarán todas sus salidas."} confirmLabel="Borrar actividad" pending={removeActivity.isPending} onClose={() => setConfirmingDelete(false)} onConfirm={() => removeActivity.mutate()} />}{deletingPhoto && <ConfirmDialog title="¿Quitar esta foto?" message="La foto se eliminará definitivamente de la salida." confirmLabel="Quitar foto" pending={removePhoto.isPending} onClose={() => setDeletingPhoto(undefined)} onConfirm={() => removePhoto.mutate(deletingPhoto.id)} />}</section>;
 }
 
-function ReviewCard({
-  plan,
-  author,
-  currentUser,
-  onEdit,
-}: {
-  plan: FunPlan;
-  author: string;
-  currentUser?: string;
-  onEdit: () => void;
-}) {
-  const review = plan.reviews.find((value) => value.author === author);
-  const name = author === "tomas" ? "Tomás" : "Avril";
-  return (
-    <article className="fun-review-card">
-      <div>
-        <span className="review-avatar">{name[0]}</span>
-        <h3>{currentUser === author ? "Tu opinión" : `Opinión de ${name}`}</h3>
-        {currentUser === author && review && (
-          <button
-            className="icon-edit"
-            type="button"
-            onClick={onEdit}
-            aria-label={`Editar opinión de ${name}`}
-          >
-            ✎
-          </button>
-        )}
-      </div>
-      {review ? (
-        <>
-          <StarRating label={`Puntuación de ${name}`} value={review.rating} />
-          <p>{review.comment || "Sin comentario todavía."}</p>
-          <small>
-            Actualizada{" "}
-            {new Intl.DateTimeFormat("es-AR", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(review.updatedAt))}
-          </small>
-        </>
-      ) : (
-        <p className="muted">{name} todavía no dejó su opinión.</p>
-      )}
-    </article>
-  );
+function ReviewList({ reviews, onEdit }: { reviews: ActivityReview[]; onEdit: (review: ActivityReview) => void }) {
+  return <section className="reviews-section"><div className="section-title section-title--compact"><div><p className="eyebrow">RESEÑAS DE ESTA SALIDA</p><h2>Cómo la pasaron</h2></div><strong>{reviews.length}</strong></div>{reviews.length ? <div className="fun-review-columns">{reviews.map((review) => <article className="fun-review-card" key={review.id}><div><span className="review-avatar">{review.author[0]?.toUpperCase()}</span><h3>Reseña de {review.author}</h3><button className="secondary-button" type="button" onClick={() => onEdit(review)}>✎ Editar</button></div><StarRating label={`Puntuación de ${review.author}`} value={review.rating} /><p>{review.comment || "Sin comentario."}</p><small>Creada por {review.author} · editada por {review.updatedBy}</small></article>)}</div> : <p className="empty-state">Todavía no hay reseñas.</p>}</section>;
 }

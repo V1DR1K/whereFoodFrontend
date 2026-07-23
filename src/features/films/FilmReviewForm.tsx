@@ -4,7 +4,7 @@ import { Modal } from '../../components/ui/Modal';
 import { SegmentedLevel } from '../../components/ui/SegmentedLevel';
 import { StarRating } from '../../components/ui/StarRating';
 import type { Film, FilmReview, FilmView } from '../../types/domain';
-import { saveFilmReview, updateFilmReview } from './films';
+import { deleteFilmReview, saveFilmReview, updateFilmReview } from './films';
 import { filmReviewMetrics, metricLevel } from './reviewMetrics';
 import { showNotice } from '../../lib/flash';
 
@@ -25,15 +25,17 @@ export function FilmReviewForm({ film, view, review, onClose }: { film: Film; vi
       onClose();
     },
   });
+  const remove = useMutation({ mutationFn: () => deleteFilmReview(film.id, review!.id), onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: ['film', film.id] }), qc.invalidateQueries({ queryKey: ['films'] })]); showNotice('Eliminamos la reseña.'); onClose(); } });
 
-  return <Modal onClose={onClose} confirmDiscard pending={mutation.isPending}><form onSubmit={event => { event.preventDefault(); mutation.mutate(new FormData(event.currentTarget)); }}>
+  return <Modal onClose={onClose} confirmDiscard pending={mutation.isPending || remove.isPending}><form onSubmit={event => { event.preventDefault(); mutation.mutate(new FormData(event.currentTarget)); }}>
     <p className="eyebrow">{review ? 'EDITAR RESEÑA' : 'RESEÑA DE LA VISTA'}</p>
     <h2>{film.tmdb?.title ?? film.title}</h2>
     <p className="muted">Vista del {dateLabel(view.watchedOn)}</p>
     <label className="film-rating">¿Cuánto te gustó?<StarRating label="Puntuación de la película" value={rating} onChange={setRating} /></label>
     <fieldset className="film-metric-fields"><legend>¿Cómo fue la película?</legend>{filmReviewMetrics.map(metric => <div className="film-metric-field" key={metric.key}><div><strong>{metric.label}</strong><small>{metricLevel(metric.levels, metrics[metric.key])}</small></div><SegmentedLevel label={metric.label} levels={metric.levels} value={metrics[metric.key]} onChange={value => setMetrics(current => ({ ...current, [metric.key]: value }))} /></div>)}</fieldset>
     <label>Reseña<textarea name="comment" defaultValue={review?.comment} placeholder="¿Qué te pareció?" /></label>
-    <button className="main-button" disabled={mutation.isPending}>{mutation.isPending ? 'Guardando…' : review ? 'Guardar cambios' : 'Guardar reseña'} ✦</button>
-    {mutation.error && <p className="form-error">{mutation.error.message}</p>}
+    <button className="main-button" disabled={mutation.isPending || remove.isPending}>{mutation.isPending ? 'Guardando…' : review ? '✓ Guardar reseña' : '＋ Agregar reseña'}</button>
+    {review && <button className="danger-button" type="button" disabled={mutation.isPending || remove.isPending} onClick={() => remove.mutate()}>× Borrar reseña</button>}
+    {(mutation.error || remove.error) && <p className="form-error">{(mutation.error || remove.error)!.message}</p>}
   </form></Modal>;
 }

@@ -5,12 +5,13 @@ import { SegmentedLevel } from "../../components/ui/SegmentedLevel";
 import { StarRating } from "../../components/ui/StarRating";
 import { mediaUrl, session } from "../../lib/api";
 import { showNotice } from "../../lib/flash";
-import type { FilmReview, FilmView } from "../../types/domain";
+import type { ExperiencePhoto, FilmReview, FilmView } from "../../types/domain";
 import { FilmForm } from "./FilmForm";
 import { FilmReviewForm } from "./FilmReviewForm";
 import { FilmViewForm } from "./FilmViewForm";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { deleteFilm, deleteFilmView, getFilm } from "./films";
+import { ExperienceGallery } from "../../components/ui/ExperienceGallery";
+import { deleteFilm, deleteFilmView, deleteFilmViewPhoto, getFilm, uploadFilmViewPhoto } from "./films";
 import { filmReviewMetrics, metricLevel } from "./reviewMetrics";
 
 const viewedLabel = (date?: string, time?: string) =>
@@ -33,6 +34,7 @@ export function FilmDetailPage() {
   }>();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingDeleteView, setConfirmingDeleteView] = useState<FilmView>();
+  const [deletingPhoto, setDeletingPhoto] = useState<ExperiencePhoto>();
   const [selectedViewId, setSelectedViewId] = useState<number>();
   const filmQuery = useQuery({
     queryKey: ["film", id],
@@ -59,6 +61,8 @@ export function FilmDetailPage() {
       setSelectedViewId(undefined);
     },
   });
+  const uploadPhotos = useMutation({ mutationFn: async ({ viewId, files }: { viewId: number; files: File[] }) => { for (const file of files) await uploadFilmViewPhoto(id, viewId, file); }, onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: ["film", id] }), qc.invalidateQueries({ queryKey: ["films"] })]); showNotice("Agregamos las fotos a esta vista."); } });
+  const removePhoto = useMutation({ mutationFn: (photoId: number) => deleteFilmViewPhoto(photoId), onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: ["film", id] }), qc.invalidateQueries({ queryKey: ["films"] })]); showNotice("Quitamos la foto."); setDeletingPhoto(undefined); } });
   const views = filmQuery.data?.views ?? [];
   useEffect(() => {
     if (views.length && !views.some((view) => view.id === selectedViewId))
@@ -72,7 +76,7 @@ export function FilmDetailPage() {
   )
     return (
       <section className="film-detail">
-        <Link to={`/films${location.search}`}>← Volver a WhichFilm</Link>
+        <Link to={`/films${location.search}`}>← Volver a WhichMovie</Link>
         <p className="form-error">
           No pudimos abrir esta película. Probá nuevamente desde la sala.
         </p>
@@ -88,8 +92,6 @@ export function FilmDetailPage() {
   const visitNumber =
     selectedViewIndex < 0 ? 0 : views.length - selectedViewIndex;
   const username = session.get()?.username;
-  const canManageFilm = session.get()?.role === "ADMIN" || film.author === username;
-  const canManageSelectedView = session.get()?.role === "ADMIN" || selectedView?.createdBy === username;
   const ownReview = selectedView?.reviews.find(
     (review) => review.author === username,
   );
@@ -105,7 +107,7 @@ export function FilmDetailPage() {
 
   return (
     <section className="film-detail">
-      <Link to={`/films${location.search}`}>← Volver a WhichFilm</Link>
+      <Link to={`/films${location.search}`}>← Volver a WhichMovie</Link>
       <div className="film-detail__head">
         <div className="film-detail__poster">
           {posterUrl ? (
@@ -135,26 +137,9 @@ export function FilmDetailPage() {
           </p>
         </div>
         <div className="detail-actions">
-          {canManageFilm && (
-            <>
-              <button
-                className="secondary-button"
-                onClick={() => setEditing(true)}
-              >
-                ✎ {film.tmdbId ? "Editar disponibilidad" : "Editar película"}
-              </button>
-              <button
-                className="text-button"
-                disabled={remove.isPending}
-                onClick={() => setConfirmingDelete(true)}
-              >
-                {remove.isPending ? "Borrando…" : "Borrar película"}
-              </button>
-            </>
-          )}
-          <button className="main-button" onClick={() => setAddingView(true)}>
-            {viewAction}
-          </button>
+          <button className="secondary-button" onClick={() => setEditing(true)}>✎ {film.tmdbId ? "Editar disponibilidad" : "Editar película"}</button>
+          <button className="main-button" onClick={() => setAddingView(true)}>＋ {viewAction}</button>
+          <button className="danger-button" disabled={remove.isPending} onClick={() => setConfirmingDelete(true)}>{remove.isPending ? "Borrando…" : "× Borrar película"}</button>
         </div>
       </div>
       {tmdb && (
@@ -284,24 +269,22 @@ export function FilmDetailPage() {
                 ))}
               </select>
             </label>
-            {canManageSelectedView && selectedView && (
-              <>
+            {selectedView && <>
                 <button
                   className="secondary-button"
                   type="button"
                   onClick={() => setEditingView(selectedView)}
                 >
-                  Editar vista
+                  ✎ Editar vista
                 </button>
                 <button
-                  className="text-button"
+                  className="danger-button"
                   type="button"
                   onClick={() => setConfirmingDeleteView(selectedView)}
                 >
-                  Borrar vista
+                  × Borrar vista
                 </button>
-              </>
-            )}
+              </>}
           </div>
         )}
         {selectedView && (
@@ -309,8 +292,9 @@ export function FilmDetailPage() {
             <p className="muted">
               Vista del{" "}
               {viewedLabel(selectedView.watchedOn, selectedView.watchedAt)}.
-              Registrada por {selectedView.createdBy}.
+              Registrada por {selectedView.createdBy}; última edición de {selectedView.updatedBy}.
             </p>
+            <ExperienceGallery accentLabel="VISTA" emptyIcon="🎬" name={`${title}, ${viewedLabel(selectedView.watchedOn, selectedView.watchedAt)}`} photos={selectedView.photos} onUpload={(files) => uploadPhotos.mutateAsync({ viewId: selectedView.id, files })} onDelete={setDeletingPhoto} />
             <div className="section-title section-title--compact">
               <div>
                 <p className="eyebrow">RESEÑAS DE ESTA VISTA</p>
@@ -324,7 +308,6 @@ export function FilmDetailPage() {
                   key={review.id}
                   review={review}
                   visitNumber={visitNumber}
-                  canManage={session.get()?.role === "ADMIN" || review.author === username}
                   onEdit={() => setReviewing({ view: selectedView, review })}
                 />
               ))}
@@ -339,7 +322,7 @@ export function FilmDetailPage() {
                   className="secondary-button"
                   onClick={() => setReviewing({ view: selectedView })}
                 >
-                  Escribir mi reseña
+                  ＋ Agregar mi reseña
                 </button>
               </div>
             )}
@@ -409,6 +392,7 @@ export function FilmDetailPage() {
           onConfirm={() => removeView.mutate(confirmingDeleteView)}
         />
       )}
+      {deletingPhoto && <ConfirmDialog title="¿Quitar esta foto?" message="La foto se eliminará definitivamente de esta vista." confirmLabel="Quitar foto" pending={removePhoto.isPending} onClose={() => setDeletingPhoto(undefined)} onConfirm={() => removePhoto.mutate(deletingPhoto.id)} />}
     </section>
   );
 }
@@ -416,12 +400,10 @@ export function FilmDetailPage() {
 function ReviewCard({
   review,
   visitNumber,
-  canManage,
   onEdit,
 }: {
   review: FilmReview;
   visitNumber: number;
-  canManage: boolean;
   onEdit: () => void;
 }) {
   const own = review.author === session.get()?.username;
@@ -438,16 +420,7 @@ function ReviewCard({
       <div>
         <span className="review-avatar">{initial}</span>
         <h3>{own ? "Tu reseña" : `Reseña de ${authorLabel}`}</h3>
-        {canManage && (
-          <button
-            className="icon-edit"
-            type="button"
-            aria-label="Editar reseña"
-            onClick={onEdit}
-          >
-            ✎
-          </button>
-        )}
+        <button className="secondary-button" type="button" aria-label="Editar reseña" onClick={onEdit}>✎ Editar</button>
       </div>
       <StarRating
         label={`Puntuación de ${authorLabel}`}

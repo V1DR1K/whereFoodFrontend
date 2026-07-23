@@ -190,7 +190,7 @@ export function WhichFilmPage() {
         <button className="add-film-button" onClick={() => setShowForm(true)}>
           <span className="add-film-icon">＋</span>
           <span>
-            <small>NUEVA PELÍCULA</small>Buscar o cargar
+            <small>WHICHMOVIE · NUEVA PELÍCULA</small>Agregar película
           </span>
           <b>🎞️</b>
         </button>
