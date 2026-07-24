@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useDeferredValue, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FilmCard } from "./FilmCard";
 import { FilmForm } from "./FilmForm";
@@ -7,9 +7,8 @@ import { getFilmGenres, getFilms, getPlatforms } from "./films";
 import { Modal } from "../../components/ui/Modal";
 import { EntityCreateButton } from "../../components/ui/EntityCreateButton";
 import { CatalogEntitySearch } from "../../components/ui/CatalogEntitySearch";
-import { CatalogMoreButton, useIncrementalLimit } from "../../components/ui/IncrementalCatalog";
+import { CatalogMoreButton } from "../../components/ui/IncrementalCatalog";
 import { useCatalogPageSize } from "../../lib/settings";
-import type { Film } from "../../types/domain";
 import {
   catalogSortFromQuery,
   catalogSortOptions,
@@ -23,54 +22,6 @@ const filmCatalogSortOptions = catalogSortOptions.map((option) => {
   if (option.value === "date-asc") return { ...option, label: "Vista más antigua" };
   return option;
 });
-
-function currentRating(film: Film) {
-  const currentReviews = new Map<string, Film["reviews"][number]>();
-  for (const review of film.reviews) {
-    const author = review.author?.toLowerCase();
-    if ((author === "tomas" || author === "avril") && !currentReviews.has(author)) {
-      currentReviews.set(author, review);
-    }
-  }
-  const ratings = [...currentReviews.values()].map((review) => review.rating);
-  return ratings.length
-    ? ratings.reduce((total, rating) => total + rating, 0) / ratings.length
-    : undefined;
-}
-
-function sortFilms(films: Film[], sort: CatalogSortValue) {
-  if (!sort) return films;
-  return [...films].sort((left, right) => {
-    if (sort === "date-desc" || sort === "date-asc") {
-      const direction = sort === "date-desc" ? -1 : 1;
-      const leftDate = left.lastWatchedOn ?? left.updatedAt;
-      const rightDate = right.lastWatchedOn ?? right.updatedAt;
-      return (Date.parse(leftDate) - Date.parse(rightDate)) * direction;
-    }
-    const leftRating = currentRating(left);
-    const rightRating = currentRating(right);
-    // Unrated films remain after rated ones instead of triggering per-film requests.
-    if (leftRating === undefined) return rightRating === undefined ? 0 : 1;
-    if (rightRating === undefined) return -1;
-    return (leftRating - rightRating) * (sort === "rating-desc" ? -1 : 1);
-  });
-}
-
-function matchesSearch(film: Film, search: string) {
-  if (!search) return true;
-  const text = [
-    film.title,
-    film.originalTitle,
-    film.tmdb?.title,
-    film.tmdb?.originalTitle,
-    ...film.genres,
-    film.platform?.name,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLocaleLowerCase("es");
-  return text.includes(search.toLocaleLowerCase("es"));
-}
 
 function FilterChips({
   label,
@@ -161,25 +112,52 @@ function FilterChips({
   );
 }
 
+function useFilmPages({
+  genre,
+  platformId,
+  search,
+  sort,
+  watched,
+  pageSize,
+}: {
+  genre?: string;
+  platformId?: number;
+  search: string;
+  sort: CatalogSortValue;
+  watched: boolean;
+  pageSize: number;
+}) {
+  return useInfiniteQuery({
+    queryKey: ["films", watched, genre, platformId, search, sort, pageSize],
+    queryFn: ({ pageParam }) =>
+      getFilms({
+        genre,
+        platformId,
+        watched,
+        search: search || undefined,
+        sort: sort || undefined,
+        cursor: pageParam,
+        size: pageSize,
+      }),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
+}
+
 function FilmSection({
   title,
   eyebrow,
-  films,
+  query,
   empty,
   filtered,
-  pageSize,
-  resetKey,
 }: {
   title: string;
   eyebrow: string;
-  films: Film[];
+  query: ReturnType<typeof useFilmPages>;
   empty: string;
   filtered: boolean;
-  pageSize: number;
-  resetKey: string;
 }) {
-  const [limit, showMore] = useIncrementalLimit(pageSize, `${resetKey}:${films.length}`);
-  const displayed = films.slice(0, limit);
+  const films = query.data?.pages.flatMap((page) => page.content) ?? [];
   return (
     <section className="film-section">
       <div className="section-title">
@@ -187,18 +165,20 @@ function FilmSection({
           <p className="eyebrow">{eyebrow}</p>
           <h2>{title}</h2>
         </div>
-        <strong>{displayed.length} película{displayed.length === 1 ? "" : "s"}</strong>
+        <strong>Mostrando {films.length} película{films.length === 1 ? "" : "s"}</strong>
       </div>
-      {displayed.length ? (
+      {query.isError ? (
+        <p className="form-error">{query.error.message}</p>
+      ) : films.length ? (
         <div className="film-grid">
-          {displayed.map((film) => (
+          {films.map((film) => (
             <FilmCard key={film.id} film={film} />
           ))}
         </div>
       ) : (
-        <p className="empty-state">{filtered ? "No encontramos películas con estos filtros." : empty}</p>
+        !query.isLoading && <p className="empty-state">{filtered ? "No encontramos películas con estos filtros." : empty}</p>
       )}
-      {displayed.length < films.length && <CatalogMoreButton onClick={showMore} />}
+      {query.hasNextPage && <CatalogMoreButton loading={query.isFetchingNextPage} onClick={() => query.fetchNextPage()} />}
     </section>
   );
 }
@@ -218,9 +198,21 @@ export function WhichFilmPage() {
   const pageSize = useCatalogPageSize();
   const searchTerm = search.trim();
   const deferredSearch = useDeferredValue(searchTerm);
-  const filmsQuery = useQuery({
-    queryKey: ["films", genre, platformId],
-    queryFn: () => getFilms({ genre: genre || undefined, platformId }),
+  const pendingFilms = useFilmPages({
+    genre: genre || undefined,
+    platformId,
+    search: deferredSearch,
+    sort,
+    watched: false,
+    pageSize,
+  });
+  const watchedFilms = useFilmPages({
+    genre: genre || undefined,
+    platformId,
+    search: deferredSearch,
+    sort,
+    watched: true,
+    pageSize,
   });
   useEffect(() => {
     const next = new URLSearchParams();
@@ -238,28 +230,17 @@ export function WhichFilmPage() {
     queryKey: ["film-genres"],
     queryFn: getFilmGenres,
   });
-  const all = filmsQuery.data ?? [];
-  const genres = useMemo(
-    () =>
-      [...new Set(all.flatMap((film) => film.genres))].sort((a, b) =>
-        a.localeCompare(b, "es"),
-      ),
-    [all],
-  );
+  const all = [
+    ...(pendingFilms.data?.pages.flatMap((page) => page.content) ?? []),
+    ...(watchedFilms.data?.pages.flatMap((page) => page.content) ?? []),
+  ];
   const filterGenres = genreOptions.data?.length
     ? genreOptions.data.map((option) => ({
         id: option.name,
         label: `${option.emoji} ${option.name}`,
       }))
-    : genres.map((name) => ({ id: name, label: name }));
-  const visible = sortFilms(
-    all.filter((film) => matchesSearch(film, deferredSearch)),
-    sort,
-  );
-  const pending = visible.filter((film) => film.watchedCount === 0);
-  const watched = visible.filter((film) => film.watchedCount > 0);
+    : [];
   const filtered = Boolean(genre || platformId || searchTerm || sort);
-  const resetKey = [genre, platformId, searchTerm, sort].join(":");
   return (
     <>
       <section className="film-hero">
@@ -324,29 +305,23 @@ export function WhichFilmPage() {
         />
       </section>
       {(platforms.isError || genreOptions.isError) && <p className="form-error">No pudimos cargar todos los filtros. Podés seguir explorando la lista.</p>}
-      {filmsQuery.isError ? (
-        <p className="form-error">{filmsQuery.error.message}</p>
-      ) : filmsQuery.isLoading ? (
+      {pendingFilms.isLoading && watchedFilms.isLoading ? (
         <p aria-busy="true" className="muted">Cargando la sala…</p>
       ) : (
         <>
           <FilmSection
-            films={pending}
+            query={pendingFilms}
             eyebrow="EN LA LISTA"
             title="Para ver"
             empty="Todavía no hay películas en la lista. ¡Busquen la primera!"
             filtered={filtered}
-            pageSize={pageSize}
-            resetKey={resetKey}
           />
           <FilmSection
-            films={watched}
+            query={watchedFilms}
             eyebrow="YA PASARON POR LA SALA"
             title="Vistas registradas"
             empty="Cuando sumen la primera vista, aparecerá acá."
             filtered={filtered}
-            pageSize={pageSize}
-            resetKey={resetKey}
           />
         </>
       )}

@@ -8,6 +8,7 @@ export function AppLayout() {
   const location = useLocation();
   const user = session.get();
   const isAdmin = user?.role === 'ADMIN';
+  const canManageSection = isAdmin || user?.username === 'avril';
   const inFood = location.pathname.startsWith('/food');
   const inFilms = location.pathname.startsWith('/films');
   const inCook = location.pathname.startsWith('/how-cook');
@@ -17,6 +18,8 @@ export function AppLayout() {
   const isDetail = location.pathname !== sectionHome;
 
   const sectionShell = inFood ? 'food-shell' : inFilms ? 'film-shell' : inCook ? 'cook-shell' : inFun ? 'fun-shell' : '';
+  const sectionSettingsLink = inFood ? '/food/categories' : inFilms ? '/films/platforms' : inFun ? '/why-fun/categories' : undefined;
+  const outsideSection = !inFood && !inFilms && !inCook && !inFun;
 
   return <main className={`app-shell ${sectionShell}`}>
     <header className="app-header">
@@ -26,7 +29,8 @@ export function AppLayout() {
           <Link className={buttonClassName('icon', 'round round--section-home')} to="/" aria-label="Cambiar de aplicación" title="Cambiar de aplicación">🏠</Link>
           <Link className={buttonClassName('icon', `round round--back${isDetail ? ' round--back--detail' : ''}`)} to={mobileBackTarget} aria-label="Volver" title="Volver">↩️</Link>
         </>}
-        {isAdmin && <Link className={buttonClassName('icon', 'round')} to="/settings" aria-label="Configuración" title="Configuración">⚙️</Link>}
+        {canManageSection && sectionSettingsLink && <Link className={buttonClassName('icon', 'round')} to={sectionSettingsLink} aria-label="Configuración de la sección" title="Configuración de la sección">⚙️</Link>}
+        {isAdmin && outsideSection && <Link className={buttonClassName('icon', 'round')} to="/settings" aria-label="Configuración global" title="Configuración global">⚙️</Link>}
         <Button className="avatar" icon="🚪" variant="icon" aria-label={`Cerrar sesión de ${user?.username ?? 'usuario'}`} title="Cerrar sesión" onClick={() => { logout(); navigate('/login'); }} />
       </div>
     </header>

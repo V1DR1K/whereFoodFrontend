@@ -1,13 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Modal } from "../../components/ui/Modal";
 import { EntityCreateButton } from "../../components/ui/EntityCreateButton";
-import type { Activity, FunCategory } from "../../types/domain";
+import type { FunCategory } from "../../types/domain";
 import { FunVenueCard } from "./FunVenueCard";
 import { ActivityForm } from "./ActivityForm";
 import { CatalogEntitySearch } from "../../components/ui/CatalogEntitySearch";
-import { CatalogMoreButton, useIncrementalLimit } from "../../components/ui/IncrementalCatalog";
+import { CatalogMoreButton } from "../../components/ui/IncrementalCatalog";
 import { useCatalogPageSize } from "../../lib/settings";
 import { getActivities, getFunCategories } from "./whyFun";
 import {
@@ -21,22 +21,6 @@ const positiveIdFromQuery = (value: string | null) => {
   return Number.isInteger(id) && id > 0 ? id : undefined;
 };
 
-function matchesSearch(
-  activity: {
-    name: string;
-    address: string;
-    category: FunCategory;
-    subcategory: FunCategory;
-  },
-  search: string,
-) {
-  if (!search) return true;
-  return [activity.name, activity.address, activity.category.name, activity.subcategory.name]
-    .join(" ")
-    .toLocaleLowerCase("es")
-    .includes(search.toLocaleLowerCase("es"));
-}
-
 function FilterChips({ label, options, selected, onSelect }: { label: string; options: FunCategory[]; selected?: number; onSelect: (id?: number) => void }) {
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? options : options.slice(0, 6);
@@ -44,29 +28,56 @@ function FilterChips({ label, options, selected, onSelect }: { label: string; op
   return <section className="fun-filter"><span>{label}</span><div className="chips"><button aria-pressed={!selected} className={!selected ? "selected" : ""} type="button" onClick={() => choose()}>Todas</button>{visible.map((category) => <button aria-pressed={category.id === selected} key={category.id} className={category.id === selected ? "selected" : ""} type="button" onClick={() => choose(category.id)}>{category.icon} {category.name}</button>)}{options.length > 6 && <button type="button" onClick={() => setExpanded(true)} aria-label={`Ver más ${label.toLowerCase()}`}>•••</button>}</div>{expanded && <Modal onClose={() => setExpanded(false)}><p className="eyebrow">FILTRAR POR {label.toUpperCase()}</p><h2>Elegí una opción</h2><div className="chips fun-filter-dialog"><button aria-pressed={!selected} className={!selected ? "selected" : ""} type="button" onClick={() => choose()}>Todas</button>{options.map((category) => <button aria-pressed={category.id === selected} key={category.id} className={category.id === selected ? "selected" : ""} type="button" onClick={() => choose(category.id)}>{category.icon} {category.name}</button>)}</div></Modal>}</section>;
 }
 
+function useActivityPages({
+  categoryId,
+  subcategoryId,
+  search,
+  sort,
+  visited,
+  pageSize,
+}: {
+  categoryId?: number;
+  subcategoryId?: number;
+  search: string;
+  sort: CatalogSortValue;
+  visited: boolean;
+  pageSize: number;
+}) {
+  return useInfiniteQuery({
+    queryKey: ["activities", visited, categoryId, subcategoryId, search, sort, pageSize],
+    queryFn: ({ pageParam }) =>
+      getActivities({
+        categoryId,
+        subcategoryId,
+        visited,
+        search: search || undefined,
+        sort: sort || undefined,
+        cursor: pageParam,
+        size: pageSize,
+      }),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
+}
+
 function ActivitySection({
-  activities,
+  query,
   eyebrow,
   title,
   empty,
   filtered,
-  pageSize,
-  resetKey,
 }: {
-  activities: Activity[];
+  query: ReturnType<typeof useActivityPages>;
   eyebrow: string;
   title: string;
   empty: string;
   filtered: boolean;
-  pageSize: number;
-  resetKey: string;
 }) {
-  const [limit, showMore] = useIncrementalLimit(pageSize, `${resetKey}:${activities.length}`);
-  const displayed = activities.slice(0, limit);
+  const activities = query.data?.pages.flatMap((page) => page.content) ?? [];
   return <section className="fun-section">
-    <div className="section-title"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></div><strong>{displayed.length} actividades</strong></div>
-    {displayed.length ? <div className="fun-grid">{displayed.map((activity) => <FunVenueCard key={activity.id} activity={activity} />)}</div> : <p className="empty-state">{filtered ? "No hay actividades con esos filtros." : empty}</p>}
-    {displayed.length < activities.length && <CatalogMoreButton onClick={showMore} />}
+    <div className="section-title"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></div><strong>Mostrando {activities.length} actividades</strong></div>
+    {query.isError ? <p className="form-error">{query.error.message}</p> : activities.length ? <div className="fun-grid">{activities.map((activity) => <FunVenueCard key={activity.id} activity={activity} />)}</div> : !query.isLoading && <p className="empty-state">{filtered ? "No hay actividades con esos filtros." : empty}</p>}
+    {query.hasNextPage && <CatalogMoreButton loading={query.isFetchingNextPage} onClick={() => query.fetchNextPage()} />}
   </section>;
 }
 
@@ -87,27 +98,29 @@ export function WhyFunPage() {
   const searchTerm = search.trim();
   const deferredSearch = useDeferredValue(searchTerm);
   const categories = useQuery({ queryKey: ["fun-categories"], queryFn: getFunCategories });
-  const activities = useQuery({ queryKey: ["activities", categoryId, subcategoryId], queryFn: () => getActivities({ categoryId, subcategoryId }) });
+  const pendingActivities = useActivityPages({
+    categoryId,
+    subcategoryId,
+    search: deferredSearch,
+    sort,
+    visited: false,
+    pageSize,
+  });
+  const doneActivities = useActivityPages({
+    categoryId,
+    subcategoryId,
+    search: deferredSearch,
+    sort,
+    visited: true,
+    pageSize,
+  });
+  const activities = [
+    ...(pendingActivities.data?.pages.flatMap((page) => page.content) ?? []),
+    ...(doneActivities.data?.pages.flatMap((page) => page.content) ?? []),
+  ];
   const roots = (categories.data ?? []).filter((category) => !category.parentId);
   const subcategories = (categories.data ?? []).filter((category) => category.parentId === categoryId);
-  const activitiesWithSearch = (activities.data ?? []).filter((activity) =>
-    matchesSearch(activity, deferredSearch),
-  );
-  const visibleActivities = !sort
-    ? activitiesWithSearch
-    : [...activitiesWithSearch].sort((left, right) => {
-        if (sort === "date-desc" || sort === "date-asc") {
-          return (Date.parse(left.updatedAt) - Date.parse(right.updatedAt)) * (sort === "date-desc" ? -1 : 1);
-        }
-        const leftRating = left.rating;
-        const rightRating = right.rating;
-        if (leftRating == null) return rightRating == null ? 0 : 1;
-        if (rightRating == null) return -1;
-        return (leftRating - rightRating) * (sort === "rating-desc" ? -1 : 1);
-      });
   const filtered = Boolean(categoryId || subcategoryId || searchTerm || sort);
-  const pendingActivities = visibleActivities.filter((activity) => activity.visitCount === 0);
-  const doneActivities = visibleActivities.filter((activity) => activity.visitCount > 0);
 
   useEffect(() => {
     const next = new URLSearchParams();
@@ -117,8 +130,6 @@ export function WhyFunPage() {
     if (sort) next.set("sort", sort);
     setSearchParams(next, { replace: true });
   }, [categoryId, searchTerm, setSearchParams, sort, subcategoryId]);
-
-  const resetKey = [categoryId, subcategoryId, searchTerm, sort].join(":");
 
   return (
     <>
@@ -136,7 +147,7 @@ export function WhyFunPage() {
       <section className="fun-controls">
         <div className="catalog-search-sort">
           <CatalogEntitySearch
-            candidates={(activities.data ?? []).map((activity) => ({ id: activity.id, title: activity.name, updatedAt: activity.updatedAt }))}
+            candidates={activities.map((activity) => ({ id: activity.id, title: activity.name, updatedAt: activity.updatedAt }))}
             label="Buscar actividades"
             onChange={setSearch}
             placeholder="Nombre, dirección o categoría"
@@ -153,9 +164,9 @@ export function WhyFunPage() {
         {categoryId && <FilterChips label="Subcategorías" options={subcategories} selected={subcategoryId} onSelect={setSubcategoryId} />}
       </section>
       {categories.isError && <p className="form-error">No pudimos cargar las categorías.</p>}
-      {activities.isError ? <p className="form-error">{activities.error.message}</p> : activities.isLoading ? <p className="muted" aria-busy="true">Cargando actividades…</p> : <>
-        <ActivitySection activities={pendingActivities} eyebrow="PARA HACER" title="Pendientes para salir" empty="Todavía no hay actividades pendientes." filtered={filtered} pageSize={pageSize} resetKey={resetKey} />
-        <ActivitySection activities={doneActivities} eyebrow="YA SALIERON" title="Salidas registradas" empty="Cuando registren una salida, aparecerá acá." filtered={filtered} pageSize={pageSize} resetKey={resetKey} />
+      {pendingActivities.isLoading && doneActivities.isLoading ? <p className="muted" aria-busy="true">Cargando actividades…</p> : <>
+        <ActivitySection query={pendingActivities} eyebrow="PARA HACER" title="Pendientes para salir" empty="Todavía no hay actividades pendientes." filtered={filtered} />
+        <ActivitySection query={doneActivities} eyebrow="YA SALIERON" title="Salidas registradas" empty="Cuando registren una salida, aparecerá acá." filtered={filtered} />
       </>}
       {creating && <ActivityForm onClose={() => setCreating(false)} />}
     </>

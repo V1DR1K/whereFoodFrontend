@@ -1,14 +1,18 @@
 import { api } from '../../lib/api';
-import type { Film, FilmGenreOption, FilmReview, FilmView, TmdbMovie, WatchPlatform } from '../../types/domain';
+import type { Film, FilmGenreOption, FilmReview, FilmView, Slice, TmdbMovie, WatchPlatform } from '../../types/domain';
 
 export type FilmInput = { tmdbId?: number; title?: string; originalTitle?: string; synopsis?: string; releaseDate?: string; posterPath?: string; watchedOn?: string; genres: string[]; platformId?: number };
 export type PlatformInput = { name: string; icon: string; active: boolean };
-export const getFilms = (filters: { genre?: string; platformId?: number; watched?: boolean } = {}) => {
+export const getFilms = (filters: { genre?: string; platformId?: number; watched?: boolean; search?: string; sort?: string; cursor?: number; size?: number } = {}) => {
   const query = new URLSearchParams();
   if (filters.genre) query.set('genre', filters.genre);
   if (filters.platformId) query.set('platformId', String(filters.platformId));
   if (filters.watched !== undefined) query.set('watched', String(filters.watched));
-  return api<Film[]>(`/films${query.size ? `?${query}` : ''}`);
+  if (filters.search) query.set('search', filters.search);
+  if (filters.sort) query.set('sort', filters.sort);
+  if (filters.cursor !== undefined) query.set('cursor', String(filters.cursor));
+  if (filters.size !== undefined) query.set('size', String(filters.size));
+  return api<Slice<Film>>(`/films${query.size ? `?${query}` : ''}`);
 };
 export const getFilm = (id: number) => api<Film>(`/films/${id}`);
 export const searchTmdbMovies = (query: string) => api<TmdbMovie[]>(`/tmdb/movies?${new URLSearchParams({ query })}`);

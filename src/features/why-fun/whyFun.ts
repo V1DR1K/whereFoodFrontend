@@ -1,5 +1,5 @@
 import { api } from '../../lib/api';
-import type { Activity, ActivityReview, ActivityVisit, FunCategory } from '../../types/domain';
+import type { Activity, ActivityReview, ActivityVisit, FunCategory, Slice } from '../../types/domain';
 
 export type FunCategoryInput = { parentId?: number; name: string; icon: string; active: boolean };
 export type ActivityInput = { name: string; address: string; categoryId: number; subcategoryId: number; schedules: { dayOfWeek: string; opensAt: string; closesAt: string }[] };
@@ -8,11 +8,16 @@ export type ActivityVisitInput = { scheduledAt?: string };
 export const getFunCategories = () => api<FunCategory[]>('/why-fun/categories');
 export const getAllFunCategories = () => api<FunCategory[]>('/why-fun/categories/all');
 export const saveFunCategory = (input: FunCategoryInput, id?: number) => api<FunCategory>(`/why-fun/categories${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });
-export const getActivities = (filters: { categoryId?: number; subcategoryId?: number } = {}) => {
+export const getActivities = (filters: { categoryId?: number; subcategoryId?: number; search?: string; visited?: boolean; sort?: string; cursor?: number; size?: number } = {}) => {
  const query = new URLSearchParams();
  if (filters.categoryId) query.set('categoryId', String(filters.categoryId));
- if (filters.subcategoryId) query.set('subcategoryId', String(filters.subcategoryId));
- return api<Activity[]>(`/why-fun/activities${query.size ? `?${query}` : ''}`);
+  if (filters.subcategoryId) query.set('subcategoryId', String(filters.subcategoryId));
+  if (filters.search) query.set('search', filters.search);
+  if (filters.visited !== undefined) query.set('visited', String(filters.visited));
+  if (filters.sort) query.set('sort', filters.sort);
+  if (filters.cursor !== undefined) query.set('cursor', String(filters.cursor));
+  if (filters.size !== undefined) query.set('size', String(filters.size));
+  return api<Slice<Activity>>(`/why-fun/activities${query.size ? `?${query}` : ''}`);
 };
 export const getActivity = (id: number) => api<Activity>(`/why-fun/activities/${id}`);
 export const saveActivity = (input: ActivityInput, id?: number) => api<Activity>(`/why-fun/activities${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) });
