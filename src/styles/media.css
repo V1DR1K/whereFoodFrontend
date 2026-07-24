@@ -195,6 +195,30 @@
   background: #050505;
 }
 
+:is(html, body):has(.food-shell) { --page-scrollbar: #ff8a00; }
+:is(html, body):has(.film-shell) { --page-scrollbar: #b8adff; }
+:is(html, body):has(.cook-shell) { --page-scrollbar: #d4ef55; }
+:is(html, body):has(.fun-shell) { --page-scrollbar: #ff8bca; }
+
+:is(html, body):has(.app-shell) {
+  scrollbar-color: var(--page-scrollbar) #050505;
+  scrollbar-width: thin;
+}
+
+:is(html, body):has(.app-shell)::-webkit-scrollbar {
+  width: 8px;
+}
+
+:is(html, body):has(.app-shell)::-webkit-scrollbar-thumb {
+  border: 2px solid #050505;
+  border-radius: 999px;
+  background: var(--page-scrollbar);
+}
+
+:is(html, body):has(.app-shell)::-webkit-scrollbar-track {
+  background: #050505;
+}
+
 .food-shell .place-review__heading {
   align-items: center;
   gap: 8px;

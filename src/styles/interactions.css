@@ -198,15 +198,16 @@
   display: grid;
   gap: 5px;
   padding: 14px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--section-accent) 62%, var(--line));
   border-radius: 13px;
-  background: var(--panel);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--section-accent) 18%, var(--panel)), var(--panel));
+  box-shadow: 3px 3px 0 var(--section-shadow);
   color: var(--muted);
   font-size: 12px;
 }
 .rating-breakdown__metrics strong {
   font: 600 23px/1 "Fraunces";
-  color: var(--cream);
+  color: var(--section-accent);
 }
 .place-reservation-toggle {
   grid-template-columns: auto 1fr;
