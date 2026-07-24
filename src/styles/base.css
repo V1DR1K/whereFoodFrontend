@@ -20,7 +20,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; background: var(--bg); }
-#root { min-height: 100vh; isolation: isolate; overflow-x: hidden; }
+#root { min-height: 100vh; isolation: isolate; overflow-x: clip; }
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }

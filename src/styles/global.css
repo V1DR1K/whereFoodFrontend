@@ -178,7 +178,6 @@ a {
   -webkit-backdrop-filter: blur(14px);
 }
 .app-shell:has(.modal-backdrop) .app-header {
-  position: static;
   z-index: 0;
 }
 .brand {
